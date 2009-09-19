@@ -1,0 +1,52 @@
+#!/bin/sh
+#
+# Builds an AMI from within a running instance.
+#
+
+lib_path="$(dirname $0)/../lib/aether"
+
+. $lib_path/metadata
+
+access_key=$(cat /mnt/access.key)
+secret_key=$(cat /mnt/secret.key)
+
+# get the manifest of the current instance
+echo "Getting manifest..."
+manifest=$(instance_metadata ami-manifest-path)
+ami_bucket=$(dirname $manifest)
+ami_name=$(basename $manifest .manifest.xml)
+
+# get the revision from the name (e.g. oll-database-master-r2 is 2)
+revision=$(echo $ami_name | sed 's/^.*-r\([0-9]*\)$/\1/')
+
+# increment to the next revision
+let "revision += 1"
+
+ami_name="${ami_name%-r[0-9]*}"
+ami_new_name="$ami_name-r$revision"
+
+# unmount any mounted EBS filesystems
+echo "Unmounting EBS filesystems..."
+mounts=($(awk '$1 ~ /^\/dev\/sd[c-z]/ { print $2 }' /etc/mtab))
+for point in ${mounts[@]}; do
+  echo $point
+  umount $point || exit $?
+done
+
+# build image from current volume
+echo "Building $ami_new_name..."
+ec2-bundle-vol -d /mnt \
+  -k /mnt/ami-root.pem \
+  -c /mnt/cert.pem \
+  -u 5577-7815-3797 -r $(uname -m) -p $ami_new_name || exit $?
+
+ec2-upload-bundle -b ami-bin \
+  -m /mnt/$ami_new_name.manifest.xml \
+  -a $access_key -s $secret_key --location US || exit $?
+
+# remount EBS filesystems
+echo "Re-mounting EBS filesystems..."
+for point in ${mounts[@]}; do
+  echo $point
+  mount $point
+done

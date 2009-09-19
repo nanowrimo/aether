@@ -1,0 +1,11 @@
+instance_metadata() {
+  instance_query meta-data/$1
+}
+
+instance_query() {
+  path="$1"
+  version="${2:-latest}"
+  curl -s http://169.254.169.254/$version/$path
+}
+
+# vim: set ft=sh et sw=2 sts=2 ts=8:
