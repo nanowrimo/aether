@@ -10,20 +10,28 @@ lib_path="$(dirname $0)/../lib/aether"
 access_key=$(cat /mnt/access.key)
 secret_key=$(cat /mnt/secret.key)
 
-# get the manifest of the current instance
-echo "Getting manifest..."
-manifest=$(instance_metadata ami-manifest-path)
-ami_bucket=$(dirname $manifest)
-ami_name=$(basename $manifest .manifest.xml)
+ami_name="$1"
 
-# get the revision from the name (e.g. oll-database-master-r2 is 2)
-revision=$(echo $ami_name | sed 's/^.*-r\([0-9]*\)$/\1/')
+# if a name was given, this is the first custom build
+if [[ "x$ami_name" != "x" ]]; then
+  ami_name="$ami_name-r1"
+else
+  # get the manifest of the current instance
+  echo "Getting manifest..."
+  manifest=$(instance_metadata ami-manifest-path)
+  ami_bucket=$(dirname $manifest)
+  ami_name=$(basename $manifest .manifest.xml)
 
-# increment to the next revision
-let "revision += 1"
+  # get the revision from the name (e.g. oll-database-master-r2 is 2)
+  revision=$(echo $ami_name | sed 's/^.*-r\([0-9]*\)$/\1/')
 
-ami_name="${ami_name%-r[0-9]*}"
-ami_new_name="$ami_name-r$revision"
+  # increment to the next revision
+  let "revision += 1"
+
+  ami_name="${ami_name%-r[0-9]*}"
+  ami_name="$ami_name-r$revision"
+fi
+
 
 # unmount any mounted EBS filesystems
 echo "Unmounting EBS filesystems..."
@@ -34,14 +42,14 @@ for point in ${mounts[@]}; do
 done
 
 # build image from current volume
-echo "Building $ami_new_name..."
+echo "Building $ami_name..."
 ec2-bundle-vol -d /mnt \
   -k /mnt/ami-root.pem \
   -c /mnt/cert.pem \
-  -u 5577-7815-3797 -r $(uname -m) -p $ami_new_name || exit $?
+  -u 5577-7815-3797 -r $(uname -m) -p $ami_name || exit $?
 
-ec2-upload-bundle -b ami-bin \
-  -m /mnt/$ami_new_name.manifest.xml \
+ec2-upload-bundle -b $ami_bucket \
+  -m /mnt/$ami_name.manifest.xml \
   -a $access_key -s $secret_key --location US || exit $?
 
 # remount EBS filesystems
@@ -50,3 +58,6 @@ for point in ${mounts[@]}; do
   echo $point
   mount $point
 done
+
+# register AMI
+rudy-ec2 images -R $ami_bucket/$ami_name.manifest.xml
