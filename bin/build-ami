@@ -27,7 +27,7 @@ else
 
   # get the latest revision of a registered images with this name
   ami_latest=$(rudy-ec2 images -o self \
-    | awk '$NF ~ /^\(?'$ami_bucket'\/'$ami_name'\./ { print $NF }' \
+    | awk '$NF ~ /^\(?'$ami_bucket'\/'$ami_name'-r[0-9]+\./ { print $NF }' \
     | sort -r | head -n 1)
 
   # get the revision from the name (e.g. oll-database-master-r2 is 2)
