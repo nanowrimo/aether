@@ -14,7 +14,6 @@ ami_name="$1"
 
 # if a name was given, this is the first custom build
 if [[ "x$ami_name" != "x" ]]; then
-  ami_name="$ami_name-r1"
   ami_bucket=${2:-ami-bin}
 else
   # get the manifest of the current instance
@@ -24,21 +23,20 @@ else
   ami_bucket=$(dirname $manifest)
   ami_name=$(basename $manifest .manifest.xml)
   ami_name="${ami_name%-r[0-9]*}"
-
-  # get the latest revision of a registered images with this name
-  ami_latest=$(rudy-ec2 images -o self \
-    | awk '$NF ~ /^\(?'$ami_bucket'\/'$ami_name'-r[0-9]+\./ { print $NF }' \
-    | sort -r | head -n 1)
-
-  # get the revision from the name (e.g. oll-database-master-r2 is 2)
-  revision=$(echo "$ami_latest" | sed 's/.*-r\([0-9]*\)\.manifest\.xml/\1/')
-
-  # increment to the next revision
-  let "revision += 1"
-
-  ami_name="$ami_name-r$revision"
 fi
 
+# get the latest revision of a registered images with this name
+ami_latest=$(rudy-ec2 images -o self \
+  | awk '$NF ~ /^\(?'$ami_bucket'\/'$ami_name'-r[0-9]+\./ { print $NF }' \
+  | sort -r | head -n 1)
+
+# get the revision from the name (e.g. oll-database-master-r2 is 2)
+revision=$(echo "$ami_latest" | sed 's/.*-r\([0-9]*\)\.manifest\.xml/\1/')
+
+# increment to the next revision
+let "revision += 1"
+
+ami_name="$ami_name-r$revision"
 
 # unmount any mounted EBS filesystems
 echo "Unmounting EBS filesystems..."
