@@ -46,12 +46,19 @@ for point in ${mounts[@]}; do
   umount $point || exit $?
 done
 
+arch="$(uname -m)"
+
+# ix86 architectures should be i386
+if [[ "x${arch%%i[3-9]86}" == "x" ]]; then
+  arch=i386
+fi
+
 # build image from current volume
 echo "Building $ami_name..."
 ec2-bundle-vol -d /mnt \
   -k /mnt/ami-root.pem \
   -c /mnt/cert.pem \
-  -u 5577-7815-3797 -r $(uname -m) -p $ami_name || exit $?
+  -u 5577-7815-3797 -r $arch -p $ami_name || exit $?
 
 ec2-upload-bundle -b $ami_bucket \
   -m /mnt/$ami_name.manifest.xml \
