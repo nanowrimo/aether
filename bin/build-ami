@@ -31,7 +31,7 @@ else
     | sort -r | head -n 1)
 
   # get the revision from the name (e.g. oll-database-master-r2 is 2)
-  revision=$(echo "$ami_latest" | sed 's/^.*-r\([0-9]*\))$/\1/')
+  revision=$(echo "$ami_latest" | sed 's/.*-r\([0-9]*\)\.manifest\.xml/\1/')
 
   # increment to the next revision
   let "revision += 1"
