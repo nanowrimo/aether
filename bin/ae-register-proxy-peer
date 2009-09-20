@@ -1,0 +1,7 @@
+#!/bin/sh
+#
+# Registers a cache peer with the squid daemon.  The squid configuration is
+# altered and the daemon is reloaded (if running).
+#
+
+
