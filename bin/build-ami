@@ -12,7 +12,6 @@ secret_key=$(cat /mnt/secret.key)
 
 ami_name="$1"
 
-# if a name was given, this is the first custom build
 if [[ "x$ami_name" != "x" ]]; then
   ami_bucket=${2:-ami-bin}
 else
@@ -26,6 +25,7 @@ else
 fi
 
 # get the latest revision of a registered images with this name
+echo "Getting the latest revision of this image..."
 ami_latest=$(rudy-ec2 images -o self \
   | awk '$NF ~ /^\(?'$ami_bucket'\/'$ami_name'-r[0-9]+\./ { print $NF }' \
   | sort -r | head -n 1)
@@ -65,4 +65,6 @@ for point in ${mounts[@]}; do
 done
 
 # register AMI
-rudy-ec2 images -R $ami_bucket/$ami_name.manifest.xml
+echo -n "Registering image... "
+ami_id=$(rudy-ec2 images -R $ami_bucket/$ami_name.manifest.xml)
+echo $ami_id
