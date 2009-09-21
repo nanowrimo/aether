@@ -15,7 +15,7 @@ sed_conf() {
     addr="$1"
     cmd="$2"
   fi
-  sed -i .ae-rp.bak "$addr"' {
+  sed -i .ae-rp.bak -e "$addr"' {
     '"$cmd"'
   }' "$CONF" && rm "$CONF.ae-rp.bak"
 }
