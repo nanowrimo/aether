@@ -4,4 +4,91 @@
 # altered and the daemon is reloaded (if running).
 #
 
+CONF_START=AE-REGISTER-PROXY-START
+CONF_END=AE-REGISTER-PROXY-END
 
+sed_conf() {
+  if [[ "x$2" == "x" ]]; then
+    addr='/!'$CONF_START'!/,/!'$CONF_END'!/'
+    cmd="$1"
+  else
+    addr="$1"
+    cmd="$2"
+  fi
+  sed -i .ae-rp.bak "$addr"' {
+    '"$cmd"'
+  }' "$CONF" && rm "$CONF.ae-rp.bak"
+}
+
+append_peer_conf() {
+  peer="$1"
+  shift
+  sed_conf '/!'$CONF_START'!/' 'a \
+cache_peer '$peer' parent 80 0 no-query originserver round-robin sourcehash'
+  edit_peer_conf "cache_peer $peer" 'a \
+cache_peer_access '$peer' deny all'
+  for acl in $*; do
+    edit_peer_conf "cache_peer $peer" 'a \
+cache_peer_access '$peer' allow '$acl
+  done
+}
+
+edit_peer_conf() {
+  sed_conf '/^'"$1"' / {
+    '"$2"'
+  }'
+}
+
+# options
+CONF=
+
+while getopts "c:" option; do
+  case "$option" in
+  c) CONF="$OPTARG" ;;
+  esac
+done
+
+shift $((OPTIND-1))
+
+peer="$1"
+shift
+
+if [[ "x$peer" == "x" ]]; then
+  echo "USAGE: $(basename $0) [-c config] peer_host [acl [...]]"
+  exit 1
+fi
+
+squid=""
+if [[ "x$CONF" == "x" ]]; then
+  squid=$(which squid)
+
+  if [[ "x$squid" == "x" ]]; then
+    echo "Squid doesn't appear to be installed."
+    exit 2
+  fi
+
+  # parse the config location from the squid compile options
+  CONF="$($squid -v | sed -n "/--sysconfdir/ s/^.*--sysconfdir=\(.*\)'.*$/\1/ p")"
+  CONF="$conf/squid.conf"
+fi
+
+# delete any entries for the given peer
+edit_peer_conf "cache_peer $peer" d
+edit_peer_conf "cache_peer_access $peer" d
+
+# append cache_peer and cache_peer_access parameters
+append_peer_conf "$peer" $*
+
+if [[ "x$squid" != "x" ]]; then
+  # test config
+  if ! $squid -k parse; then
+    echo "Config failed parse test."
+    exit 3
+  fi
+
+  # reload config
+  if ! $squid -k reconfigure; then
+    echo "Failed to reload squid."
+    exit 3
+  fi
+fi
