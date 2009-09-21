@@ -15,7 +15,7 @@ sed_conf() {
     addr="$1"
     cmd="$2"
   fi
-  sed -i .ae-rp.bak -e "$addr"' {
+  sed -i.ae-rp.bak -e "$addr"' {
     '"$cmd"'
   }' "$CONF" && rm "$CONF.ae-rp.bak"
 }
@@ -41,10 +41,12 @@ edit_peer_conf() {
 
 # options
 CONF=
+REMOVE=
 
-while getopts "c:" option; do
+while getopts "c:r" option; do
   case "$option" in
   c) CONF="$OPTARG" ;;
+  r) REMOVE=1 ;;
   esac
 done
 
@@ -77,7 +79,9 @@ edit_peer_conf "cache_peer $peer" d
 edit_peer_conf "cache_peer_access $peer" d
 
 # append cache_peer and cache_peer_access parameters
-append_peer_conf "$peer" $*
+if [[ ! $REMOVE ]]; then
+  append_peer_conf "$peer" $*
+fi
 
 if [[ "x$squid" != "x" ]]; then
   # test config
