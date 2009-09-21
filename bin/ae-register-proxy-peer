@@ -69,7 +69,7 @@ if [[ "x$CONF" == "x" ]]; then
 
   # parse the config location from the squid compile options
   CONF="$($squid -v | sed -n "/--sysconfdir/ s/^.*--sysconfdir=\([^']*\)'.*$/\1/ p")"
-  CONF="$conf/squid.conf"
+  CONF="$CONF/squid.conf"
 fi
 
 # delete any entries for the given peer
