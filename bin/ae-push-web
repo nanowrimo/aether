@@ -13,7 +13,7 @@ LOCAL=
 DRY=
 HELP=
 
-while getopts "hg:n" option; do
+while getopts "hg:ln" option; do
   case "$option" in
   h) HELP=1 ;;
   g) GROUP="$OPTARG" ;;
