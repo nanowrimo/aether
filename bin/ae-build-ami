@@ -39,8 +39,11 @@ let "revision += 1"
 ami_name="$ami_name-r$revision"
 
 # unmount any mounted EBS filesystems
-echo "Unmounting EBS filesystems..."
-mounts=($(awk '$1 ~ /^\/dev\/(sd[c-z]|md[0-9])/ { print $2 }' /etc/mtab))
+echo "Unmounting EBS/NFS filesystems..."
+mounts=(
+  $(awk '$1 ~ /^\/dev\/(sd[c-z]|md[0-9])/ { print $2 }' /etc/mtab)
+  $(awk '$3 ~ /^nfs/ { print $2 }' /etc/mtab)
+)
 for point in ${mounts[@]}; do
   echo $point
   umount $point || exit $?
@@ -65,7 +68,7 @@ ec2-upload-bundle -b $ami_bucket \
   -a $access_key -s $secret_key --location US || exit $?
 
 # remount EBS filesystems
-echo "Re-mounting EBS filesystems..."
+echo "Re-mounting EBS/NFS filesystems..."
 for point in ${mounts[@]}; do
   echo $point
   mount $point
