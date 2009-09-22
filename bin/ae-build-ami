@@ -40,7 +40,7 @@ ami_name="$ami_name-r$revision"
 
 # unmount any mounted EBS filesystems
 echo "Unmounting EBS filesystems..."
-mounts=($(awk '$1 ~ /^\/dev\/sd[c-z]/ { print $2 }' /etc/mtab))
+mounts=($(awk '$1 ~ /^\/dev\/(sd[c-z]|md[0-9])/ { print $2 }' /etc/mtab))
 for point in ${mounts[@]}; do
   echo $point
   umount $point || exit $?
