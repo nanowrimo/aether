@@ -1,0 +1,71 @@
+#!/bin/sh
+#
+# Syncs local web project files to all instances in the web EC2 security
+# group.
+#
+
+# rsync options
+RSYNC_OPTS="-rvlt"
+
+# options
+GROUP=web
+DRY=
+HELP=
+
+while getopts "hg:n" option; do
+  case "$option" in
+  h) HELP=1 ;;
+  g) GROUP="$OPTARG" ;;
+  n) DRY=1 ;;
+  esac
+done
+
+shift $((OPTIND-1))
+
+if [[ $HELP || ! $1 ]]; then
+  echo "usage: $(basename $0) [options] remote_directory"
+  echo "  -h         Display this message."
+  echo "  -g         EC2 security group of instances."
+  echo "  -n         Dry rsync run. Just test."
+  exit 1
+fi
+
+# remote directory can be absolute or relative to the /var/www
+if [[ "x${1##/*}" == "x" ]]; then
+  remote_directory="$1"
+else
+  remote_directory="/var/www/$1"
+fi
+
+# remove any trailing /
+remote_directory="${remote_directory%/}"
+
+hosts=$(rudy-ec2 -f tsv instances -g $GROUP | awk '$8 ~ /./ { print $8 }')
+
+if [[ $? -gt 0 ]]; then
+  echo "failed to get web instances"
+  exit $?
+fi
+
+if [[ "x${hosts[0]}" == "x" ]]; then
+  echo "there are no instance in $GROUP"
+  exit 2
+fi
+
+# setup rsync options
+
+# use any file called ".aether_sync_excludes" in the current directory
+exclude_file=
+if [[ -f .aether_sync_excludes ]]; then
+  RSYNC_OPTS="$RSYNC_OPTS --exclude-from=.aether_sync_excludes"
+fi
+
+# check for dry-run option
+if [[ $DRY ]]; then
+  RSYNC_OPTS="$RSYNC_OPTS --dry-run"
+fi
+
+# perform sync to each web host
+for host in $hosts; do
+  echo rsync $RSYNC_OPTS ./ $host:$remote_directory/
+done
