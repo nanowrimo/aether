@@ -67,5 +67,5 @@ fi
 
 # perform sync to each web host
 for host in $hosts; do
-  echo rsync $RSYNC_OPTS ./ $host:$remote_directory/
+  rsync $RSYNC_OPTS ./ $host:$remote_directory/
 done
