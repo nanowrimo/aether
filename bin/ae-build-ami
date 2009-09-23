@@ -42,7 +42,7 @@ ami_name="$ami_name-r$revision"
 echo "Unmounting EBS/NFS filesystems..."
 mounts=(
   $(awk '$1 ~ /^\/dev\/(sd[c-z]|md[0-9])/ { print $2 }' /etc/mtab)
-  $(awk '$3 ~ /^nfs/ { print $2 }' /etc/mtab)
+  $(awk '$3 ~ /^nfs4?$/ { print $2 }' /etc/mtab)
 )
 for point in ${mounts[@]}; do
   echo $point
