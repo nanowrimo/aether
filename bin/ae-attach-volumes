@@ -9,12 +9,14 @@ lib_path="$(dirname $0)/../lib/aether"
 
 instance_id=$(instance_metadata instance-id)
 
-if [[ -f /etc/ec2/volumes ]]; then
-  echo "Attaching all volumes in /etc/ec2/volumes..."
-
-  while read vol; do
-    vol=($vol)
-    rudy-ec2 volumes -A -i $instance_id -d ${vol[7]} ${vol[0]}
-  done
-else
+if [[ ! -f /etc/ec2/volumes ]]; then
+  echo "No volumes have been defined in '/etc/ec2/volumes'."
+  exit 1
 fi
+
+echo "Attaching all volumes in '/etc/ec2/volumes'..."
+
+while read vol; do
+  vol=($vol)
+  rudy-ec2 volumes -A -i $instance_id -d ${vol[7]} ${vol[0]}
+done
