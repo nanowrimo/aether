@@ -1,0 +1,33 @@
+sed_conf() {
+  if [[ "x$2" == "x" ]]; then
+    addr='/!'$CONF_START'!/,/!'$CONF_END'!/'
+    cmd="$1"
+  else
+    addr="$1"
+    cmd="$2"
+  fi
+  sed -i.ae-rp.bak -e "$addr"' {
+    '"$cmd"'
+  }' "$CONF" && rm "$CONF.ae-rp.bak"
+}
+
+append_peer_conf() {
+  peer="$1"
+  shift
+  sed_conf '/!'$CONF_START'!/' 'a \
+cache_peer '$peer' parent 80 0 no-query originserver round-robin sourcehash'
+  edit_peer_conf "cache_peer $peer" 'a \
+cache_peer_access '$peer' deny all'
+  for acl in $*; do
+    edit_peer_conf "cache_peer $peer" 'a \
+cache_peer_access '$peer' allow '$acl
+  done
+}
+
+edit_peer_conf() {
+  sed_conf '/^'"$1"' / {
+    '"$2"'
+  }'
+}
+
+# vim: set ft=sh et sw=2 sts=2 ts=8:
