@@ -19,4 +19,4 @@ echo "Attaching all volumes in '/etc/ec2/volumes'..."
 while read vol; do
   vol=($vol)
   rudy-ec2 volumes -A -i $instance_id -d ${vol[7]} ${vol[0]}
-done
+done < /etc/ec2/volumes
