@@ -29,6 +29,7 @@ shift
 
 if [[ "x$peer" == "x" ]]; then
   echo "USAGE: $(basename $0) [-c config] peer_host [acl [...]]"
+  echo "USAGE: $(basename $0) -r peer_host"
   exit 1
 fi
 
