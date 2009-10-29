@@ -1,0 +1,9 @@
+#!/bin/sh
+
+# mount Drupal files over NFS
+if ! grep -q '/var/lib/drupal' /etc/mtab; then
+  echo "Mounting Drupal files over NFS"
+  mkdir /var/lib/nfs/rpc_pipefs 2> /dev/null
+  restart nfs-common
+  mount /var/lib/drupal
+fi

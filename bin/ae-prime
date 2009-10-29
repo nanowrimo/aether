@@ -1,0 +1,64 @@
+#!/bin/sh
+#
+# Connects to the given ec2 instance and performs initialization tasks
+# specific to its role.
+
+lib_path="$(dirname $0)/../lib/aether"
+
+# options
+ROLE=
+HELP=
+KEY=
+USER=root
+DOMAIN=aether.lettersandlight.org
+
+while getopts "hr:k:u:d:" option; do
+  case "$option" in
+  h) HELP=1 ;;
+  r) ROLE="$OPTARG" ;;
+  k) KEY="$OPTARG" ;;
+  u) USER="$OPTARG" ;;
+  d) DOMAIN="$OPTARG" ;;
+  esac
+done
+
+shift $((OPTIND-1))
+
+if [[ $HELP || ! $1 ]]; then
+  echo "usage: $(basename $0) [options] hostname"
+  echo "  -h         Display this message."
+  echo "  -r role    Instance role. Derived from the hostname by default."
+  echo "  -k key     SSH identity file."
+  echo "  -u user    SSH user. [root]"
+  echo "  -d domain  Domain name. [aether.lettersandlight.org]"
+  exit 1
+fi
+
+HOST=$1
+
+# derive role from hostname, if no specific role was given
+#  e.g. "web1.aether.lettersandlight.org" would be derived as role "web"
+if [[ ! $ROLE ]]; then
+  ROLE=${HOST%%[0-9]*}
+fi
+
+ssh_remote="ssh ${KEY:+-i $KEY} $USER"
+ssh="$ssh_remote@$HOST"
+
+# execute remote tasks (tasks that connect to other hosts to grant permission,
+# etc).
+remote="$lib_path/prime/remote/$ROLE"
+[[ -x $remote ]] && ssh_remote="$ssh_remote" HOST="$HOST" $remote
+
+# create temporary file on host for script contents
+script="$($ssh 'tempfile -m 0700')"
+
+# upload the base and role-specific script
+(
+  echo -e "#!/bin/sh\nHOST=$HOST\nDOMAIN=$DOMAIN"
+  cat "$lib_path/prime/base"
+  cat "$lib_path/prime/$ROLE"
+) | $ssh 'cat > "'"$script"'"'
+
+# execute script
+$ssh "$script"
