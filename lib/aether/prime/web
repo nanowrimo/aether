@@ -7,3 +7,6 @@ if ! grep -q '/var/lib/drupal' /etc/mtab; then
   restart nfs-common
   mount /var/lib/drupal
 fi
+
+# (re)start apache
+/etc/init.d/apache2 restart
