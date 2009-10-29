@@ -14,7 +14,7 @@ echo "Setting up hostname"
 edit 's/^\(supersede host-name "\)\w*\(";\)$/\1'$HOST'\2/' \
   /etc/dhcp3/dhclient.conf
 
-edit 's/^\(host_name \)\w*$/\1'$HOST.$DOMAIN'/' \
+edit 's/^\(host_name \).*$/\1'$HOST.$DOMAIN'/' \
   /etc/munin/munin-node.conf
 
 hostname $HOST
