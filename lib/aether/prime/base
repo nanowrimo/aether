@@ -21,3 +21,4 @@ hostname $HOST
 
 restart networking
 restart munin-node
+restart syslog-ng
