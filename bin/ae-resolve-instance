@@ -1,0 +1,47 @@
+#!/bin/sh
+#
+# Resolves an instance ID from a number of different parameters.
+#
+
+lib_path="$(dirname $0)/../lib/aether"
+
+# options
+HELP=
+AKEY=~/.ec2/access.key
+SKEY=~/.ec2/secret.key
+
+HOSTNAME=
+VOLUME=
+
+while getopts "hA:S:n:v:" option; do
+  case "$option" in
+  h) HELP=1 ;;
+  A) AKEY="$OPTARG" ;;
+  S) SKEY="$OPTARG" ;;
+  n) HOSTNAME="$OPTARG" ;;
+  v) VOLUME="$OPTARG" ;;
+  esac
+done
+
+shift $((OPTIND-1))
+
+if [[ $HELP ]]; then
+  echo "usage: $(basename $0) [options]"
+  echo "  -h         Display this message."
+  echo "  -A file    EC2 access key. [~/.ec2/access.key]"
+  echo "  -S file    EC2 secret key. [~/.ec2/secret.key]"
+  echo "  -n name    Host name of instance."
+  echo "  -v volume  Has the given volume attached."
+  exit 1
+fi
+
+if [[ $HOSTNAME ]]; then
+  # if it's not already an AWS hostname, resolve one
+  if [[ ${HOSTNAME%amazonaws.com.} == $HOSTNAME ]]; then
+    HOSTNAME=$(dig +short +search -t cname $HOSTNAME | tail -n 1)
+  fi
+  HOSTNAME=${HOSTNAME%.}
+  rudy-ec2 -f tsv i | awk '$8 == "'$HOSTNAME'" { print $9 }'
+elif [[ $VOLUME ]]; then
+  rudy-ec2 -f tsv v | awk '$1 == "'$VOLUME'" { print $7 }'
+fi
