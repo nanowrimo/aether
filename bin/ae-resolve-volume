@@ -1,0 +1,71 @@
+#!/bin/sh
+#
+# Resolves volumes from a number of different parameters.
+#
+
+lib_path="$(dirname $0)/../lib/aether"
+
+# add script directory to path
+PATH="$PATH:$(dirname $0)"
+
+# options
+HELP=
+AKEY=~/.ec2/access.key
+SKEY=~/.ec2/secret.key
+
+DESCRIBE=
+INSTANCE=
+SIZE=
+STATUS=
+
+while getopts "hA:S:di:s:t:" option; do
+  case "$option" in
+  h) HELP=1 ;;
+  A) AKEY="$OPTARG" ;;
+  S) SKEY="$OPTARG" ;;
+  d) DESCRIBE=1 ;;
+  i) INSTANCE="$OPTARG" ;;
+  s) SIZE="$OPTARG" ;;
+  t) STATUS="$OPTARG" ;;
+  esac
+done
+
+shift $((OPTIND-1))
+
+if [[ $HELP ]]; then
+  echo "usage: $(basename $0) [options]"
+  echo "  -h          Display this message."
+  echo "  -A file     EC2 access key. [~/.ec2/access.key]"
+  echo "  -S file     EC2 secret key. [~/.ec2/secret.key]"
+  echo "  -d          Show further description of volumes."
+  echo "  -i instance Specific instance ID or host the volume is attached to."
+  echo "  -s size     Volume size in GB."
+  echo "  -t status   Volume status (attached, available, etc)."
+  exit 1
+fi
+
+conditions="1"
+
+if [[ $INSTANCE ]]; then
+  # resolve instance ID, if it's not one already
+  if [[ ${INSTANCE##i-} == $INSTANCE ]]; then
+    INSTANCE=$(ae-resolve-instance -n $INSTANCE)
+  fi
+  conditions="$conditions && \$7 == \"$INSTANCE\""
+fi
+
+if [[ $SIZE ]]; then
+  conditions="$conditions && \$3 == \"$SIZE\""
+fi
+
+if [[ $STATUS ]]; then
+  conditions="$conditions && \$2 == \"$STATUS\""
+fi
+
+if [[ $DESCRIBE ]]; then
+  column=0
+else
+  column=1
+fi
+
+rudy-ec2 -f tsv v | awk "$conditions { print \$$column }"
