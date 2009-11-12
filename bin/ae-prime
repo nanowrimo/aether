@@ -47,10 +47,12 @@ ssh="$ssh_remote@$HOST"
 
 # execute remote tasks (tasks that connect to other hosts to grant permission,
 # etc).
-remote="$lib_path/prime/remote/$ROLE"
-if [[ -x $remote ]]; then
-  ssh_remote="$ssh_remote" HOST="$HOST" ROLE="$ROLE" DOMAIN="$DOMAIN" $remote
-fi
+for r in base $ROLE; do
+  remote="$lib_path/prime/remote/$r"
+  if [[ -x $remote ]]; then
+    ssh_remote="$ssh_remote" HOST="$HOST" ROLE="$ROLE" DOMAIN="$DOMAIN" $remote
+  fi
+done
 
 # create temporary file on host for script contents
 script="$($ssh 'tempfile -m 0700')"
