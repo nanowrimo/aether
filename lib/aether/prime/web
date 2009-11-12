@@ -9,4 +9,4 @@ if ! grep -q '/var/lib/drupal' /etc/mtab; then
 fi
 
 # (re)start apache
-/etc/init.d/apache2 restart
+restart apache2
