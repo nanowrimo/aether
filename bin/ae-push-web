@@ -24,8 +24,8 @@ done
 
 shift $((OPTIND-1))
 
-if [[ $HELP || ! $1 ]]; then
-  echo "usage: $(basename $0) [options] remote_directory"
+if [[ $HELP ]]; then
+  echo "usage: $(basename $0) [options] [remote_directory]"
   echo "  -h         Display this message."
   echo "  -g         EC2 security group of instances."
   echo "  -l         Sync is done to a local directory."
@@ -34,10 +34,15 @@ if [[ $HELP || ! $1 ]]; then
 fi
 
 # remote directory can be absolute or relative to the /var/www
-if [[ "x${1##/*}" == "x" ]]; then
-  remote_directory="$1"
+if [[ "x$1" != "x" ]]; then
+  if [[ "x${1##/*}" == "x" ]]; then
+    remote_directory="$1"
+  else
+    remote_directory="/var/www/$1"
+  fi
 else
-  remote_directory="/var/www/$1"
+  # default to using the basename of the current directory
+  remote_directory="/var/www/$(basename "$PWD")"
 fi
 
 # remove any trailing /
@@ -69,7 +74,7 @@ else
   fi
 
   if [[ "x${hosts[0]}" == "x" ]]; then
-    echo "there are no instance in $GROUP"
+    echo "there are no instances in group $GROUP"
     exit 2
   fi
 
