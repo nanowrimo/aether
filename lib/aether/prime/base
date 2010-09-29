@@ -17,8 +17,13 @@ edit 's/^\(supersede host-name "\)\w*\(";\)$/\1'$HOST'\2/' \
 edit 's/^\(host_name \).*$/\1'$HOST.$DOMAIN'/' \
   /etc/munin/munin-node.conf
 
+edit 's/^\(myhostname \).*$/\1= '$HOST.$DOMAIN'/' \
+  /etc/postfix/main.cf
+
 hostname $HOST
 
 restart networking
 restart munin-node
 restart syslog-ng
+restart postfix
+
