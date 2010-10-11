@@ -1,0 +1,62 @@
+#!/bin/sh
+#
+# Performs a snapshot of the MySQL database volumes using
+# ec2-consistent-snapshot.
+
+lib_path="$(dirname $0)/../lib/aether"
+
+# options
+HELP=
+AKEY=/mnt/access.key
+SKEY=/mnt/secret.key
+MYSQL_DEFAULTS_FILE=/etc/mysql/ae-snapshot-db.cnf
+XFS_MOUNTPOINT=/var/lib/mysql
+DESC="ae-snapshot-db"
+
+while getopts "hA:S:d:m:x:" option; do
+  case "$option" in
+  h) HELP=1 ;;
+  A) AKEY="$OPTARG" ;;
+  S) SKEY="$OPTARG" ;;
+  d) DESC="$OPTARG" ;;
+  m) MYSQL_DEFAULTS_FILE="$OPTARG" ;;
+  x) XFS_MOUNTPOINT="$OPTARG" ;;
+  esac
+done
+
+shift $((OPTIND-1))
+
+if [[ $HELP || ! $1 ]]; then
+  echo "usage: $(basename $0) [options] volume-id [volume-id ...]"
+  echo "  -h         Display this message."
+  echo "  -A file    EC2 access key. [/mnt/access.key]"
+  echo "  -S file    EC2 secret key. [/mnt/secret.key]"
+  echo "  -d string  Description used as a prefix to label the snapshots."
+  echo "  -m file    MySQL defaults file containing authentication."
+  echo "             [/etc/mysql/ae-snapshot-db.conf]"
+  echo "  -x dir     XFS mountpoint to be frozen while backing up."
+  echo "             [/var/lib/mysql]"
+  exit 1
+fi
+
+# Make sure that ec2-consistent-snapshot is installed
+if ! which ec2-consistent-snapshot; then
+  echo "ec2-consistent-snapshot isn't installed"
+  exit 1
+fi
+
+# Generate a unique ID for this snapshot (multiple EBS snapshots but a
+# unifying identifier) and include it in the description.
+id="$((date "+%Y%m%d%H%M%S"; dd if=/dev/random bs=100000 count=1 2> /dev/null) \
+  | sha1sum | cut -d ' ' -f 1)"
+
+# Execute ec2-consistent-snapshot. Note that the master status is stored as a
+# file "ae-snapshot-master-status"
+ec2-consistent-snapshot \
+  --aws-access-key-id-file "$AKEY" \
+  --aws-secret-access-key-file "$SKEY" \
+  --xfs-filesystem "$XFS_MOUNTPOINT" \
+  --mysql-defaults-file "$MYSQL_DEFAULTS_FILE" \
+  --mysql-master-status-file "$XFS_MOUNTPOINT/ae-snapshot-master-status" \
+  --description "$DESC ($id)" \
+  $*
