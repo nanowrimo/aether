@@ -11,7 +11,7 @@ AKEY=/mnt/access.key
 SKEY=/mnt/secret.key
 MYSQL_DEFAULTS_FILE=/etc/mysql/ae-snapshot-db.cnf
 XFS_MOUNTPOINT=/var/lib/mysql
-DESC="ae-snapshot-db"
+DESC=
 
 while getopts "hA:S:d:m:x:" option; do
   case "$option" in
@@ -45,6 +45,11 @@ if ! which ec2-consistent-snapshot; then
   exit 1
 fi
 
+# Default description
+if [[ ! $DESC ]]; then
+  DESC="Backup of $(hostname):$XFS_MOUNTPOINT"
+fi
+
 # Generate a unique ID for this snapshot (multiple EBS snapshots but a
 # unifying identifier) and include it in the description.
 id="$((date "+%Y%m%d%H%M%S"; dd if=/dev/random bs=100000 count=1 2> /dev/null) \
@@ -56,6 +61,7 @@ ec2-consistent-snapshot \
   --aws-access-key-id-file "$AKEY" \
   --aws-secret-access-key-file "$SKEY" \
   --xfs-filesystem "$XFS_MOUNTPOINT" \
+  --mysql \
   --mysql-defaults-file "$MYSQL_DEFAULTS_FILE" \
   --mysql-master-status-file "$XFS_MOUNTPOINT/ae-snapshot-master-status" \
   --description "$DESC ($id)" \
