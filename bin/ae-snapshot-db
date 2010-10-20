@@ -47,13 +47,15 @@ fi
 
 # Default description
 if [[ ! $DESC ]]; then
-  DESC="Backup of $(hostname):$XFS_MOUNTPOINT"
+  DESC="$(hostname):$XFS_MOUNTPOINT"
 fi
 
 # Generate a unique ID for this snapshot (multiple EBS snapshots but a
 # unifying identifier) and include it in the description.
 id="$((date "+%Y%m%d%H%M%S"; dd if=/dev/random bs=100000 count=1 2> /dev/null) \
   | sha1sum | cut -d ' ' -f 1)"
+
+echo $id
 
 # Execute ec2-consistent-snapshot. Note that the master status is stored as a
 # file "ae-snapshot-master-status"
