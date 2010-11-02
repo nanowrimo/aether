@@ -15,8 +15,7 @@ append_peer_conf() {
   peer="$1"
   shift
   sed_conf '/!'$CONF_START'!/' 'a \
-cache_peer '$peer' parent 80 0 no-query originserver round-robin \
-monitorurl=http://'$peer'/ping.html monitorinterval=20 monitorsize=14-16'
+cache_peer '$peer' parent 80 0 no-query originserver round-robin monitorurl=http://'$peer'/ping.html monitorinterval=20 monitorsize=14-16'
   edit_peer_conf "cache_peer $peer" 'a \
 cache_peer_access '$peer' deny all'
   for acl in $*; do
