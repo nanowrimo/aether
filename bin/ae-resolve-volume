@@ -51,7 +51,7 @@ if [[ $INSTANCE ]]; then
   if [[ ${INSTANCE##i-} == $INSTANCE ]]; then
     INSTANCE=$(ae-resolve-instance -n $INSTANCE)
   fi
-  conditions="$conditions && \$7 == \"$INSTANCE\""
+  conditions="$conditions && (\$7 == \"$INSTANCE\" || (\$4 ~ /^snap-/ && \$8 == \"$INSTANCE\"))"
 fi
 
 if [[ $SIZE ]]; then
