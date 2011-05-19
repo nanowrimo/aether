@@ -95,7 +95,8 @@ module Aether
     # Builds resulting YAML configuration.
     #
     def build_yaml(node)
-      {'classes' => [node]}.to_yaml
+      # Hyphens aren't allowed in class names, so replace them with underscores.
+      { 'classes' => [ node.tr('-', '_') ] }.to_yaml
     end
 
     # Returns all instances, either from a serialized cache or straight from
