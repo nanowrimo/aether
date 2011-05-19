@@ -9,6 +9,7 @@ require 'rubygems'
 require 'AWS'
 require 'socket'
 require 'observer'
+require 'tempfile'
 require 'yaml'
 
 options = {}
@@ -17,13 +18,23 @@ OptionParser.new do |parser|
   parser.banner = "Usage: ae-puppet-classfifier [options] HOST"
 
   options[:access_key] = "/mnt/access.key"
-  parser.on("-a", "--access-key FILE", "Use the access key stored here.") do |file|
+  parser.on("-a", "--access-key FILE", "A file containing the AWS access key.") do |file|
     options[:access_key] = file
   end
 
   options[:secret_key] = "/mnt/secret.key"
-  parser.on("-s", "--secret-key FILE", "Use the secret key stored here.") do |file|
+  parser.on("-s", "--secret-key FILE", "A file containing the AWS secret key.") do |file|
     options[:secret_key] = file
+  end
+
+  options[:cache_file] = nil
+  parser.on("-c", "--cache-file FILE", "A file for caching instance data.") do |file|
+    options[:cache_file] = file
+  end
+
+  options[:cache_life] = nil
+  parser.on("-l", "--cache-life SECONDS", "The cache life in seconds.") do |seconds|
+    options[:cache_life] = seconds.to_i
   end
 
   options[:verbose] = false
@@ -43,8 +54,10 @@ module Aether
     include Observable
     # Initializes a new classifier using the given EC2 connection as context.
     #
-    def initialize(ec2)
+    def initialize(ec2, options = {})
       @ec2 = ec2
+      @cache_file = options[:cache_file] || File.join(Dir.tmpdir, "ae-pc-instances.yml")
+      @cache_life = options[:cache_life] || (4 * 60)
     end
 
     # Classifies the given host into a Puppet class and returns the YAML used
@@ -55,13 +68,13 @@ module Aether
 
       normal_host = normalize_host(host)
 
-      notify "looking at instances"
+      notify "normalized host", normal_host
 
       instance = instances.find do |i|
         (within_aws? ? i.privateDnsName : i.dnsName) == normal_host
       end
 
-      notify "no instance found" unless instance
+      notify(*(instance ? ["found instance", instance.instanceId] : ["no instance found"]))
 
       build_yaml(instance ? instance.group : host)
     end
@@ -79,12 +92,35 @@ module Aether
 
     private
 
+    # Builds resulting YAML configuration.
+    #
     def build_yaml(node)
       {'classes' => [node]}.to_yaml
     end
 
+    # Returns all instances, either from a serialized cache or straight from
+    # AWS.
+    #
     def instances
-      @ec2.describe_instances.reservationSet.item.map do |set|
+      File.open(@cache_file, File::RDWR|File::CREAT, 0600) do |f|
+        # Be thread/process safe by grabbing a file mutex
+        notify "locking cache file", @cache_file
+        f.flock(File::LOCK_EX)
+
+        # Is the cache new or too old?
+        if f.stat.size == 0 or f.stat.mtime < (Time.now - @cache_life)
+          notify "caching instances"
+          f.write(load_instances.to_yaml)
+        else
+          notify "cache is new enough"
+        end
+      end
+
+      @instances ||= YAML.load(File.open(@cache_file))
+    end
+
+    def load_instances
+      @instances ||= @ec2.describe_instances.reservationSet.item.map do |set|
         instance = set.instancesSet.item[0]
         instance["group"] = set.groupSet.item[0].groupId
         instance
@@ -103,7 +139,7 @@ module Aether
     # Does a forward, then reverse, DNS lookup on the host.
     #
     def normalize_host(host)
-      notify "performing reverse looking", host
+      notify "performing reverse lookup", host
 
       Socket.getaddrinfo(host, nil, Socket::AF_INET).first[2]
     rescue SocketError => e
@@ -121,7 +157,7 @@ end
 ec2 = AWS::EC2::Base.new(:access_key_id => File.new(options[:access_key]).gets.chomp,
                          :secret_access_key => File.new(options[:secret_key]).gets.chomp)
 
-pc = Aether::PuppetClassifier.new(ec2)
+pc = Aether::PuppetClassifier.new(ec2, options)
 pc.verbose! if options[:verbose]
 
 raise "You must specify a host" if ARGV.empty?
