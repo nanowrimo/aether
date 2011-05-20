@@ -70,13 +70,11 @@ module Aether
 
       notify "normalized host", normal_host
 
-      instance = instances.find do |i|
-        (within_aws? ? i.privateDnsName : i.dnsName) == normal_host
-      end
+      instance = instances[normal_host]
 
       notify(*(instance ? ["found instance", instance.instanceId] : ["no instance found"]))
 
-      build_yaml(instance ? instance.group : host)
+      instance ? serialize(instance) : ''
     end
 
     def verbose!
@@ -92,15 +90,8 @@ module Aether
 
     private
 
-    # Builds resulting YAML configuration.
-    #
-    def build_yaml(node)
-      # Hyphens aren't allowed in class names, so replace them with underscores.
-      { 'classes' => [ node.tr('-', '_') ] }.to_yaml
-    end
-
-    # Returns all instances, either from a serialized cache or straight from
-    # AWS.
+    # Returns all instances, keyed by hostname, either from a serialized cache
+    # or straight from AWS.
     #
     def instances
       File.open(@cache_file, File::RDWR|File::CREAT, 0600) do |f|
@@ -110,21 +101,26 @@ module Aether
 
         # Is the cache new or too old?
         if f.stat.size == 0 or f.stat.mtime < (Time.now - @cache_life)
-          notify "caching instances"
+          notify "fetching and caching instances"
           f.write(load_instances.to_yaml)
         else
-          notify "cache is new enough"
+          notify "cache is new enough", f.stat.mtime
         end
       end
 
       @instances ||= YAML.load(File.open(@cache_file))
     end
 
+    def ec2_key(key)
+      'ec2_' + key.to_s.gsub(/([a-z\d])([A-Z])/, '\1_\2').downcase
+    end
+
     def load_instances
-      @instances ||= @ec2.describe_instances.reservationSet.item.map do |set|
+      @instances ||= @ec2.describe_instances.reservationSet.item.inject({}) do |i,set|
         instance = set.instancesSet.item[0]
         instance["group"] = set.groupSet.item[0].groupId
-        instance
+        i[within_aws? ? instance.privateDnsName : instance.dnsName] = instance
+        i
       end
     end
 
@@ -146,11 +142,34 @@ module Aether
     rescue SocketError => e
       raise e, "failed to resolve host `#{host}'"
     end
+
+    # Builds resulting YAML configuration.
+    #
+    def serialize(instance)
+      # Hyphens aren't allowed in class names, so replace them with underscores.
+      classification = { 'classes' => [ instance.group.tr('-', '_') ] }
+
+      # Add all we know about the instance as parameters
+      parameters = instance.inject({}) do |p, (k, v)|
+        if v.is_a?(String)
+          p[ec2_key(k)] = v
+        elsif k == 'placement'
+          p[ec2_key('zone')] = v.availabilityZone
+        end
+        p
+      end
+
+      # Finally, formulate a unique name from the group and instance id
+      parameters['aether_name'] = "#{instance.group}-#{instance.instanceId[2,10]}"
+
+      classification['parameters'] = parameters
+      classification.to_yaml
+    end
   end
 
   class Notifier
     def update(msg, *args)
-      puts msg + ': ' + args.join('; ')
+      STDERR.puts msg + ': ' + args.join('; ')
     end
   end
 end
