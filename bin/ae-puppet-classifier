@@ -74,7 +74,7 @@ module Aether
 
       notify(*(instance ? ["found instance", instance.instanceId] : ["no instance found"]))
 
-      instance ? serialize(instance) : ''
+      instance ? export(instance).to_yaml : ''
     end
 
     def verbose!
@@ -89,6 +89,35 @@ module Aether
     end
 
     private
+
+    # Formulates a unique name for the given instance that we use on our
+    # Aether network.
+    #
+    def aether_name(instance)
+      "#{instance.group}-#{instance.instanceId[2,10]}"
+    end
+
+    # Build a corpus of data that the puppet manifests should have.
+    #
+    def export(instance)
+      # Hyphens aren't allowed in class names, so replace them with underscores.
+      classification = { 'classes' => [ instance.group.tr('-', '_') ] }
+
+      parameters = {'aether_name' => aether_name(instance)}
+
+      # Serialize all instances and group by sercurity group
+      parameters[ec2_key('groups')] = instances.inject({}) do |hash, (k,i)|
+        hash[i.group] ||= {}
+        hash[i.group][aether_name(i)] = serialize(i)
+        hash
+      end
+
+      parameters[ec2_key('instance')] = serialize(instance)
+
+      classification['parameters'] = parameters
+
+      classification
+    end
 
     # Returns all instances, keyed by hostname, either from a serialized cache
     # or straight from AWS.
@@ -112,7 +141,7 @@ module Aether
     end
 
     def ec2_key(key)
-      'ec2_' + key.to_s.gsub(/([a-z\d])([A-Z])/, '\1_\2').downcase
+      key.to_s.gsub(/([a-z\d])([A-Z])/, '\1_\2').downcase
     end
 
     def load_instances
@@ -143,27 +172,17 @@ module Aether
       raise e, "failed to resolve host `#{host}'"
     end
 
-    # Builds resulting YAML configuration.
+    # Serializes the given instance as output suitable for puppet.
     #
     def serialize(instance)
-      # Hyphens aren't allowed in class names, so replace them with underscores.
-      classification = { 'classes' => [ instance.group.tr('-', '_') ] }
-
-      # Add all we know about the instance as parameters
-      parameters = instance.inject({}) do |p, (k, v)|
+      instance.inject({}) do |hash, (k, v)|
         if v.is_a?(String)
-          p[ec2_key(k)] = v
+          hash[ec2_key(k)] = v
         elsif k == 'placement'
-          p[ec2_key('zone')] = v.availabilityZone
+          hash[ec2_key('zone')] = v.availabilityZone
         end
-        p
+        hash
       end
-
-      # Finally, formulate a unique name from the group and instance id
-      parameters['aether_name'] = "#{instance.group}-#{instance.instanceId[2,10]}"
-
-      classification['parameters'] = parameters
-      classification.to_yaml
     end
   end
 
