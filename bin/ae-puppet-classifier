@@ -105,6 +105,7 @@ module Aether
 
       parameters = {'aether' => {
         'name' => aether_name(instance),
+        'domain' => 'aether.lettersandlight.org',
         'fqdn' => "#{aether_name(instance)}.aether.lettersandlight.org"
       }}
 
