@@ -103,7 +103,10 @@ module Aether
       # Hyphens aren't allowed in class names, so replace them with underscores.
       classification = { 'classes' => [ instance.group.tr('-', '_') ] }
 
-      parameters = {'aether_name' => aether_name(instance)}
+      parameters = {'aether' => {
+        'name' => aether_name(instance),
+        'fqdn' => "#{aether_name(instance)}.aether.lettersandlight.org"
+      }}
 
       # Serialize all instances and group by sercurity group
       parameters[ec2_key('groups')] = instances.inject({}) do |hash, (k,i)|
