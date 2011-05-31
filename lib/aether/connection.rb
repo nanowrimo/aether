@@ -60,6 +60,8 @@ module Aether
         if f.stat.size == 0 or f.stat.mtime < (Time.now - @cache_life)
           notify "fetching and caching instances"
           f.write(load_instances.to_yaml)
+          f.flush
+          f.truncate(f.pos)
         else
           notify "cache is new enough", f.stat.mtime
         end

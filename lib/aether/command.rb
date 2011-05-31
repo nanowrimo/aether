@@ -70,9 +70,9 @@ module Aether
       args ||= ARGV
       send(method, *args)
 
-    rescue ArgumentError
+    rescue ArgumentError => e
       puts @option_parser.banner
-      exit 1
+      raise e
     rescue AWS::AuthFailure => e
       puts "Access denied. Please provide the right keys as options."
       puts
