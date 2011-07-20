@@ -49,10 +49,10 @@ module Aether
         'fqdn' => "#{aether_name(instance)}.aether.lettersandlight.org"
       }}
 
-      # Serialize all instances and group by sercurity group
+      # Serialize all instances and group by security group
       parameters[ec2_key('groups')] = @connection.instances.inject({}) do |hash, (k,i)|
         hash[i.group] ||= {}
-        hash[i.group][aether_name(i)] = serialize(i)
+        hash[i.group][aether_name(i)] = serialize(i) if i.instanceState.name == 'running'
         hash
       end
 
