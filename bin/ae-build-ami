@@ -27,8 +27,8 @@ fi
 # get the latest revision of a registered images with this name
 echo "Getting the latest revision of this image..."
 ami_latest=$(rudy-ec2 images -o self \
-  | awk '$NF ~ /^\(?'$ami_bucket'\/'$ami_name'-r[0-9]+\./ { print $NF }' \
-  | sort -r | head -n 1)
+  | gawk 'match($NF, /^\(?'$ami_bucket'\/'$ami_name'-r([0-9]+)\./, m) { print m[1]"\t"$NF }' \
+  | sort -rnk 1 | head -n 1 | awk -F"\t" '{ print $2 }')
 
 # get the revision from the name (e.g. oll-database-master-r2 is 2)
 revision=$(echo "$ami_latest" | sed 's/.*-r\([0-9]*\)\.manifest\.xml/\1/')
