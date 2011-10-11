@@ -71,9 +71,17 @@ module Aether
     end
 
     def load_instances
-      @instances ||= @ec2.describe_instances.reservationSet.item.inject({}) do |i,set|
+      # keep track of instance positions in each group
+      positions = {}
+
+      @ec2.describe_instances.reservationSet.item.inject({}) do |i,set|
         instance = set.instancesSet.item[0]
         instance["group"] = set.groupSet.item[0].groupId
+
+        positions[instance["group"]] ||= 0
+        instance["position"] = positions[instance["group"]]
+        positions[instance["group"]] += 1
+
         i[within_aws? ? instance.privateDnsName : instance.dnsName] = instance
         i
       end

@@ -75,7 +75,7 @@ module Aether
     #
     def serialize(instance)
       instance.inject({}) do |hash, (k, v)|
-        if v.is_a?(String)
+        if v.is_a?(String) || v.is_a?(Fixnum)
           hash[ec2_key(k)] = v
         elsif k == 'placement'
           hash[ec2_key('zone')] = v.availabilityZone
