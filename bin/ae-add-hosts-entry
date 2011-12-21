@@ -1,0 +1,26 @@
+#!/bin/sh
+#
+# Ensures a record in /etc/hosts for the primary address of the configured
+# interface. This script is not meant to be executed directly, but rather used
+# as a post-up interface hook in /etc/network/interfaces on Debian systems.
+#
+address=$(ip -family $ADDRFAM -o address show dev $LOGICAL primary | awk '{print $4}' | sed 's/\/.*$//')
+hostname=$(hostname)
+domain=$(awk '$1 == "domain" { print $2}' /etc/resolv.conf)
+
+set
+exit 0
+
+if [ "x$address" != "x" ] && [ "x$domain" != "x" ]; then
+  sed -i.ifd.bak -e '/^# add_hostname {$/,/^# }$/ {
+    /^#/!d
+  }' /etc/hosts
+
+  [ -f /etc/hosts.ifd.bak ] && rm /etc/hosts.ifd.bak
+
+  sed -i.ifd.bak -e '/^# add_hostname {$/ a \
+'"$address $hostname.$domain $hostname"'
+  ' /etc/hosts
+
+  [ -f /etc/hosts.ifd.bak ] && rm /etc/hosts.ifd.bak
+fi
