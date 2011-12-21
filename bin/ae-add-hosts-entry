@@ -4,6 +4,15 @@
 # interface. This script is not meant to be executed directly, but rather used
 # as a post-up interface hook in /etc/network/interfaces on Debian systems.
 #
+
+lib_path="$(dirname $0)/../lib/aether"
+
+. $lib_path/config
+
+CONF=/etc/hosts
+CONF_START=AE-ADD-HOSTS-ENTRY-START
+CONF_END=AE-ADD-HOSTS-ENTRY-END
+
 address=$(ip -family $ADDRFAM -o address show dev $LOGICAL primary | awk '{print $4}' | sed 's/\/.*$//')
 domain=$(awk '$1 == "domain" { print $2}' /etc/resolv.conf)
 
@@ -14,15 +23,6 @@ else
 fi
 
 if [ "x$address" != "x" ] && [ "x$domain" != "x" ]; then
-  sed -i.ifd.bak -e '/^# add_hostname {$/,/^# }$/ {
-    /^#/!d
-  }' /etc/hosts
-
-  [ -f /etc/hosts.ifd.bak ] && rm /etc/hosts.ifd.bak
-
-  sed -i.ifd.bak -e '/^# add_hostname {$/ a \
-'"$address $hostname.$domain $hostname"'
-  ' /etc/hosts
-
-  [ -f /etc/hosts.ifd.bak ] && rm /etc/hosts.ifd.bak
+  sed_conf '/^#/!d'
+  sed_conf_append "$address $hostname.$domain $hostname"
 fi
