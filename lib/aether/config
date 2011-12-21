@@ -12,15 +12,9 @@ sed_conf() {
 }
 
 sed_conf_append() {
-  if [[ "x$2" == "x" ]]; then
-    addr='/!'$CONF_START'!/'
-    cmd="$1"
-  else
-    addr="$1"
-    cmd="$2"
-  fi
-  sed -i.ae-rp.bak -e "$addr"' a \
-'"$cmd" "$CONF" && rm "$CONF.ae-rp.bak"
+  cmd="$1"
+  sed_conf '/!'$CONF_START'!/' 'a \
+'"$cmd"
 }
 
 append_peer_conf() {
