@@ -5,11 +5,13 @@
 # as a post-up interface hook in /etc/network/interfaces on Debian systems.
 #
 address=$(ip -family $ADDRFAM -o address show dev $LOGICAL primary | awk '{print $4}' | sed 's/\/.*$//')
-hostname=$(hostname)
 domain=$(awk '$1 == "domain" { print $2}' /etc/resolv.conf)
 
-set
-exit 0
+if [ "x$IF_HOSTNAME" != "x" ]; then
+  hostname="$IF_HOSTNAME"
+else
+  hostname=$(hostname)
+fi
 
 if [ "x$address" != "x" ] && [ "x$domain" != "x" ]; then
   sed -i.ifd.bak -e '/^# add_hostname {$/,/^# }$/ {
