@@ -1,10 +1,10 @@
 sed_conf() {
-  if [[ "x$2" == "x" ]]; then
-    addr='/!'$CONF_START'!/,/!'$CONF_END'!/'
-    cmd="$1"
-  else
+  if [ "x$2" != "x" ]; then
     addr="$1"
     cmd="$2"
+  else
+    addr='/!'$CONF_START'!/,/!'$CONF_END'!/'
+    cmd="$1"
   fi
   sed -i.ae-rp.bak -e "$addr"' {
     '"$cmd"'
@@ -13,6 +13,7 @@ sed_conf() {
 
 sed_conf_append() {
   cmd="$1"
+  shift
   sed_conf '/!'$CONF_START'!/' 'a \
 '"$cmd"
 }

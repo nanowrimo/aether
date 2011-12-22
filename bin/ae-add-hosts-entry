@@ -22,7 +22,7 @@ else
   hostname=$(hostname)
 fi
 
-if [ "x$address" != "x" ] && [ "x$domain" != "x" ]; then
+if [ "x$address" != "x" -a "x$domain" != "x" ]; then
   sed_conf '/^#/!d'
   sed_conf_append "$address $hostname.$domain $hostname"
 fi
