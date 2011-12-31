@@ -50,7 +50,7 @@ ssh="$ssh_remote@$HOST"
 for r in base $ROLE; do
   remote="$lib_path/prime/remote/$r"
   if [[ -x $remote ]]; then
-    ssh_remote="$ssh_remote" HOST="$HOST" ROLE="$ROLE" DOMAIN="$DOMAIN" $remote
+    ssh_remote="$ssh_remote" KEY="$KEY" HOST="$HOST" ROLE="$ROLE" DOMAIN="$DOMAIN" $remote
   fi
 done
 
@@ -59,7 +59,7 @@ script="$($ssh 'tempfile -m 0700')"
 
 # upload the base and role-specific script
 (
-  echo -e "#!/bin/sh\nHOST=$HOST\nDOMAIN=$DOMAIN"
+  printf '#!/bin/sh\n%s\n%s\n' "HOST=$HOST" "DOMAIN=$DOMAIN"
   cat "$lib_path/prime/base"
   cat "$lib_path/prime/$ROLE"
 ) | $ssh 'cat > "'"$script"'"'
