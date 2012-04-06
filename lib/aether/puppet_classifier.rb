@@ -24,7 +24,7 @@ module Aether
 
       notify "normalized host", normal_host
 
-      instance = @connection.instances[normalize_host(host)]
+      instance = @connection.instances[normal_host]
 
       notify(*(instance ? ["found instance", instance.instanceId] : ["no instance found"]))
 
