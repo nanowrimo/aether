@@ -1,0 +1,59 @@
+#!/bin/sh
+#
+# Opens an array of terminals and connects to each instance of the given EC2
+# security group.
+
+# options
+HELP=
+KEY=
+USER=root
+
+while getopts "hk:u:" option; do
+  case "$option" in
+  h) HELP=1 ;;
+  k) KEY="$OPTARG" ;;
+  u) USER="$OPTARG" ;;
+  esac
+done
+
+shift $((OPTIND-1))
+
+if [[ $HELP || ! $1 ]]; then
+  echo "usage: $(basename $0) [options] group"
+  echo "  -h         Display this message."
+  echo "  -k key     SSH identity file."
+  echo "  -u user    SSH user. [root]"
+  exit 1
+fi
+
+GROUP=$1
+
+case `uname -s` in
+Linux)
+  # use dvtm to open multiplexed/multi-windowed sessions.
+  which dvtm > /dev/null || (echo "Linux usage depends on dvtm." && exit 2)
+
+  commands=($(rudy-ec2 -f tsv i -g $GROUP | awk '{ print "ssh '$USER'@"$9 }'))
+
+  dvtm ${commands[@]}
+  ;;
+Darwin)
+  commands="$(rudy-ec2 -f tsv i -g $GROUP | awk '{ printf "\"ssh '$USER'@"$9"\"," }')"
+  commands="{${commands:0:${#commands}-1}}"
+
+  osascript - <<-end_osascript
+    tell application "iTerm"
+      activate
+            
+      tell (make new terminal)
+        set cmds to $commands
+        repeat with cmd in cmds
+          tell (make new session at the end of sessions)
+            exec command cmd
+          end tell
+        end repeat
+      end tell
+    end tell
+end_osascript
+  ;;
+esac
