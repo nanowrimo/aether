@@ -1,0 +1,34 @@
+require 'ripl'
+
+require 'aether/command'
+
+module Aether
+
+  # Starts a custom ripl shell for interactive access to an Aether connection.
+  #
+  class Shell < Command
+
+    autoload :Sandbox, 'aether/shell/sandbox'
+
+    # Initializes a new shell.
+    #
+    def initialize(options = {})
+      super("shell", "[options]", options)
+
+      @options[:key_name] = "cert"
+      @option_parser.on("-k", "--key-name NAME", "The EC2 key-pair name to use.") do |name|
+        @options[:key_name] = name
+      end
+
+      # The shell is always a little verbose
+      @options[:verbose] += 1 if @options[:verbose] < 1
+    end
+
+    # Starts the interactive shell.
+    #
+    def start
+      Ripl.start :binding => Sandbox.new(@connection).instance_exec { binding },
+                 :prompt => proc { Connection.latest.dns.zone.name + ">> " }
+    end
+  end
+end

@@ -1,0 +1,10 @@
+#!/usr/bin/env ruby
+#
+# Launches a new instance and provisions any dependent resources.
+#
+
+$:.unshift(File.join(File.dirname(File.dirname(__FILE__)), 'lib'))
+
+require 'aether'
+
+puts Aether::Launcher.new.run(:launch, ARGV)

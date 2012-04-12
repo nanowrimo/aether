@@ -11,7 +11,7 @@ module Aether
     # Initializes a new puppet classifier.
     #
     def initialize(options = {})
-      super("ae-puppet-classfifier [options] HOST", options)
+      super("puppet-classfifier", "[options] HOST", options)
     end
 
     # Classifies the given host into a Puppet class and returns the YAML used

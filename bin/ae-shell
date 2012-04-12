@@ -1,0 +1,10 @@
+#!/usr/bin/env ruby
+#
+# Starts an interactive shell for manipulating Aether resources.
+#
+
+$:.unshift(File.join(File.dirname(File.dirname(__FILE__)), 'lib'))
+
+require 'aether'
+
+puts Aether::Shell.new.run(:start, ARGV)

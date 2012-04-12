@@ -4,7 +4,7 @@ require 'tempfile'
 require 'yaml'
 
 module Aether
-  IMAGE_PATTERN = %r{^[^/]+/oll-(.+)(?:-(?:32|64)bit)?-r([0-9]+)\.manifest\.xml$}
+  IMAGE_PATTERN = %r{^[^/]+/oll-(.+?)(?:-(?:32|64)bit)?-r([0-9]+)\.manifest\.xml$}
 
   class Connection
     include Observable
@@ -18,31 +18,27 @@ module Aether
     end
 
     attr_accessor :access_key, :secret_key
-    attr_reader :options
+    attr_reader :options, :dns
 
     def initialize(options = {})
-      [:access_key, :secret_key].each do |key|
-        self.send("#{key}=", options[key].is_a?(IO) ? options[key].gets.chomp : options[key])
-      end
+      self.access_key = options[:access_key]
+      self.secret_key = options[:secret_key]
 
-      @ec2 = AWS::EC2::Base.new(:access_key_id => access_key,
-                                :secret_access_key => secret_key)
+      @ec2 = AWS::EC2::Base.new(:access_key_id => access_key, :secret_access_key => secret_key)
+      @dns = Dns.new(options)
 
       @cache_file = options[:cache_file] || default_cache_file
       @cache_life = options[:cache_life] || (4 * 60)
 
-      @options = {
-        :availability_zone => "us-east-1b",
-      }.merge(options)
+      @options = options
     end
 
     # Returns all AMI information.
     #
     def images
       @ec2.describe_images(:owner_id => "self").imagesSet.item.inject([]) do |images,i|
-        name, rev = i.imageLocation.gsub(IMAGE_PATTERN) { [$1, $2] }
-        i["name"] = name
-        i["revision"] = rev
+        i["name"], i["revision"] = *i.imageLocation.match(IMAGE_PATTERN).captures
+        i["revision"] = i["revision"].to_i
         images << i
       end
     end
@@ -50,20 +46,20 @@ module Aether
     # Returns all instances, keyed by hostname, either from a serialized cache
     # or straight from AWS.
     #
-    def instances
+    def instances(force_expire = false)
       File.open(@cache_file, File::RDWR|File::CREAT, 0600) do |f|
         # Be thread/process safe by grabbing a file mutex
-        notify "locking cache file", @cache_file
+        notify :debug, "locking cache file", @cache_file
         f.flock(File::LOCK_EX)
 
-        # Is the cache new or too old?
-        if f.stat.size == 0 or f.stat.mtime < (Time.now - @cache_life)
+        # Is the cache new or too old? (or are we being forced to expire it?)
+        if f.stat.size == 0 or f.stat.mtime < (Time.now - @cache_life) or force_expire
           notify "fetching and caching instances"
           f.write(load_instances.to_yaml)
           f.flush
           f.truncate(f.pos)
         else
-          notify "cache is new enough", f.stat.mtime
+          notify :debug, "cache is new enough", f.stat.mtime
         end
       end
 
