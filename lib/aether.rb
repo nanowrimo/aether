@@ -12,6 +12,8 @@ module Aether
   autoload :InstanceCollection, 'aether/instance_collection'
   autoload :Notifier, 'aether/notifier'
   autoload :OptionParser, 'aether/option_parser'
+  autoload :Volume, 'aether/volume'
+  autoload :VolumeCollection, 'aether/volume_collection'
 
   # Commands
   autoload :PuppetClassifier, 'aether/puppet_classifier'

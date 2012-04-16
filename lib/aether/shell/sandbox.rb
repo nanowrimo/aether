@@ -8,8 +8,8 @@ module Aether
 
       # A shortcut to +Instance.find+.
       #
-      def instance(id)
-        Instance.find(id)
+      def instance(id = nil)
+        (id && Instance.find(id)) || Instance
       end
 
       # A shortcut to +Instance.all+.
@@ -25,6 +25,17 @@ module Aether
         block_given? ? @connection.dns.where(&blk) : @connection.dns
       end
 
+      # A shortcut to +Volume.find+.
+      #
+      def volume(id)
+        Volume.find(id)
+      end
+
+      # A shortcut to +Volume.all+.
+      #
+      def volumes
+        Volume.all
+      end
     end
   end
 end

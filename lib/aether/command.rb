@@ -51,6 +51,16 @@ module Aether
           @options[:cache_life] = seconds.to_i
         end
 
+        @options[:ssh_user] ||= 'root'
+        parser.on("-u", "--ssh-user USER", "User to use when starting SSH sessions.") do |user|
+          @options[:ssh_user] = user
+        end
+
+        @options[:ssh_keys] ||= []
+        parser.on("-i", "--ssh-key PATH", "SSH identity file to try when connecting.") do |path|
+          @options[:ssh_keys].push(path)
+        end
+
         @options[:verbose] ||= 0
         parser.on("-v", "--verbose", "Describe what's going on.") do
           @options[:verbose] += 1
@@ -78,6 +88,8 @@ module Aether
 
       @options[:access_key] = File.new(File.expand_path(@options[:access_key])).gets.chomp
       @options[:secret_key] = File.new(File.expand_path(@options[:secret_key])).gets.chomp
+
+      @options[:ssh_keys].map! { |path| File.expand_path(path) }
     end
 
     # Runs the command using the given method and the given arguments.

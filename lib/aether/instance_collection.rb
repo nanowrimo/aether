@@ -1,5 +1,12 @@
 module Aether
   module InstanceCollection
+    # Executes the given command on all instances in the collection and
+    # returns a hash keyed by the instance host name with the output for each.
+    #
+    def exec!(cmd, &blk)
+      inject({}) { |outputs,i| i.ssh { |sh| outputs[i.dns_name] = sh.exec!(cmd, &blk) }; outputs }
+    end
+
     # Returns instances that are currently running.
     #
     def running
@@ -37,7 +44,6 @@ module Aether
       where { launch_time > time }
     end
 
-
     # Returns instances that are currently pending.
     #
     def pending
@@ -60,6 +66,12 @@ module Aether
     #
     def stopping
       in_state('stopping')
+    end
+
+    # Terminates all instances in the collection.
+    #
+    def terminate!
+      each { |instance| instance.terminate! }
     end
 
     # Returns instances that have terminated.

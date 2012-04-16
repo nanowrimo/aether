@@ -1,3 +1,5 @@
+require 'net/ssh'
+
 module Aether
   module Instance
     class Default
@@ -6,22 +8,12 @@ module Aether
 
       attr_reader :type, :options, :info
 
-      attr_accessor :connection
-
       def initialize(type, options = {})
         @type = type
         @options = {:image_name => "base-debian-6"}.merge(options)
         @info = yield if block_given?
 
         @manage_dns = true
-      end
-
-      def inspect
-        if launched?
-          "#<ins:#{type}:#{instance_id}:#{state}>"
-        else
-          "#<ins:#{type}:(new)>"
-        end
       end
 
       [:key_name, :availability_zone, :instance_type, :image_name].each do |attr|
@@ -47,6 +39,14 @@ module Aether
 
       def id
         instance_id
+      end
+
+      def inspect
+        if launched?
+          "#<ins:#{type}:#{instance_id}:#{state}>"
+        else
+          "#<ins:#{type}:(new)>"
+        end
       end
 
       def launch!
@@ -92,13 +92,17 @@ module Aether
       end
 
       def refresh!
-        result = @connection.describe_instances(:instance_id => id)
-        @info = result && result.reservationSet.item.first.instancesSet.item.first
+        @info = (result = @connection.load_instances(:instance_id => id).first) && result.last
         self
       end
 
       def security_group
         @options[:security_group] || @type
+      end
+
+      def ssh(user = nil, options = {}, &blk)
+        options = {:keys => @connection.options[:ssh_keys]}.merge(options)
+        Net::SSH.start(dns_name, @connection.options[:ssh_user] || 'root', options, &blk)
       end
 
       def state
@@ -123,6 +127,10 @@ module Aether
 
       def type
         @type || @options[:security_group]
+      end
+
+      def volumes
+        Volume.all.attached_to(self)
       end
 
       def wait_for

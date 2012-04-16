@@ -24,7 +24,7 @@ module Aether
       #
       def all(connection = nil)
         connection ||= Connection.latest
-        ins = connection.instances(true).map { |(host,info)| new(info.group, connection) { info } }
+        ins = connection.load_instances.map { |(host,info)| new(info.group, connection) { info } }
         ins.sort_by(&:launch_time).extend(InstanceCollection)
       end
 

@@ -66,11 +66,11 @@ module Aether
       @instances ||= YAML.load(File.open(@cache_file))
     end
 
-    def load_instances
+    def load_instances(*args)
       # keep track of instance positions in each group
       positions = {}
 
-      @ec2.describe_instances.reservationSet.item.inject({}) do |i,set|
+      @ec2.describe_instances(*args).reservationSet.item.inject({}) do |i,set|
         instance = set.instancesSet.item[0]
         instance["group"] = set.groupSet.item[0].groupId
 
