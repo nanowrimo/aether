@@ -119,6 +119,7 @@ module Aether
       add_observer(@notifier)
       @connection.add_observer(@notifier) if @connection
       Instance::Default.add_observer(@notifier)
+      Volume.add_observer(@notifier)
     end
 
     protected

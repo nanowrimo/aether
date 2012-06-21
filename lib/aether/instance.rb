@@ -13,10 +13,23 @@ module Aether
     }
 
     autoload :Default, 'aether/instance/default'
-    autoload :Web, 'aether/instance/web'
-    autoload :Store, 'aether/instance/store'
-    autoload :Filaments, 'aether/instance/filaments'
+    autoload :DevDatabase, 'aether/instance/dev_database'
     autoload :DevFilaments, 'aether/instance/dev_filaments'
+    autoload :Filaments, 'aether/instance/filaments'
+    autoload :Store, 'aether/instance/store'
+    autoload :Util, 'aether/instance/util'
+    autoload :Web, 'aether/instance/web'
+
+    class UnlaunchedInstanceError < StandardError; end
+
+    class RemoteExecutionError < StandardError
+      attr_reader :exit_status
+
+      def initialize(cmd, stderr = nil, code = nil)
+        @exit_status = code
+        super("failed to execute `#{cmd}': #{stderr}")
+      end
+    end
 
     class << self
 

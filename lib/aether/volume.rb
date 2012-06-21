@@ -3,6 +3,8 @@ module Aether
     include Ec2Model
     extend Observable
 
+    class AttachmentError < StandardError; end
+
     has_ec2_options(:availability_zone, :size, :snapshot_id)
 
     class << self
@@ -14,11 +16,26 @@ module Aether
           volume
         end.extend(VolumeCollection)
       end
+
+      def root_devices
+        ('h'..'z').map { |letter| "/dev/sd#{letter}" }
+      end
     end
 
     def initialize(options = {})
       @options = {:size => 2}.merge(options)
       @info = block_given? ? yield : {}
+    end
+
+    def attach!(options)
+      notify 'attaching volume', options
+
+      @connection.attach_volume(options.merge(:volume_id => id))
+    end
+
+    def attach_to!(instance)
+      raise AttachmentError unless for?(instance)
+      attach!(:instance_id => instance.id, :device => device_for(instance))
     end
 
     def attached?
@@ -34,30 +51,15 @@ module Aether
       @info['attachmentSet'] && @info['attachmentSet'].item.first
     end
 
+    def available?
+      status == 'available'
+    end
+
     def create!
       raise StandardError.new("this volumes has already been created") if created?
 
-      parameters = {:image_id => @image.imageId,
-                    :instance_type => instance_type,
-                    :security_group => security_group,
-                    :availability_zone => availability_zone,
-                    :key_name => key_name}
-
-      notify 'creating new instance', parameters
-
-      @info = @connection.run_instances(parameters).instancesSet.item.first
-
-      wait_for { |instance| instance.info.dnsName }
-
-      if @manage_dns
-        begin
-          notify 'creating new DNS alias', name, @info.dnsName
-
-          @dns_alias = @connection.dns.create_alias(name, @info.dnsName)
-        rescue StandardError => e
-          notify 'FAILED to create new DNS record', e
-        end
-      end
+      # TODO
+      raise NotImplementedError
 
       self
     end
@@ -66,14 +68,28 @@ module Aether
       not @info.empty?
     end
 
-    def detach!
+    def detach!(options = {})
       notify 'detaching volume', self
 
-      @connection.detach_volume(:volume_id => id)
+      @connection.detach_volume(options.merge(:volume_id => id))
     end
 
-    def for?(instance_name)
-      name_parts.first == instance_name
+    def device
+      attachment.device if attachment
+    end
+
+    def device_for(instance)
+      attached = instance.attached_volumes
+
+      device = Volume.root_devices.detect do |root_device|
+        not attached.any? { |volume| volume.root_device == root_device && !sibling?(volume) }
+      end
+
+      "#{device}#{raid_position}"
+    end
+
+    def for?(instance)
+      instance_type == (instance.is_a?(Instance::Default) ? instance.type : instance)
     end
 
     def id
@@ -96,6 +112,20 @@ module Aether
       attached? ? @instance ||= Instance.find(attachment.instanceId) : nil
     end
 
+    def instance_type
+      name_parts.first
+    end
+
+    def mount_device_for(instance)
+      notify 'resolving mount device for', id, name, instance
+
+      if mp = mount_point
+        devs = instance.exec!("awk '$1 !~ /^#/ && $2 == \"#{mp}\" { print $1 }' /etc/fstab").split
+        raise StandardError.new("failed to resolve device for volume") if devs.empty?
+        devs.first
+      end
+    end
+
     def mount_point
       name_parts[1]
     end
@@ -112,6 +142,19 @@ module Aether
       name_parts[2] && name_parts[2].to_i
     end
 
+    def refresh!
+      @info = connection.describe_volumes(:volume_id => id).volumeSet.item.first
+      self
+    end
+
+    def root_device
+      device && device.gsub(/\d+$/, '')
+    end
+
+    def sibling?(volume)
+      volume.instance_type == instance_type && volume.mount_point == mount_point && raid_position != volume.raid_position
+    end
+
     def status
       @info['status']
     end
@@ -125,7 +168,25 @@ module Aether
     end
 
     def to_s
-      "#{name}\t#{state}\t#{launch_time}"
+      if created?
+        if name
+          "#{id}\t#{size}G\t#{status}\t#{name}"
+        else
+          "#{id}\t#{size}G\t#{status}\t#{name}"
+        end
+      else
+        "(new)\t#{size}G"
+      end
+    end
+
+    def wait_for
+      notify "waiting on volume #{id}"
+
+      until yield self
+        notify '...'
+        sleep 3
+        refresh!
+      end
     end
 
     private

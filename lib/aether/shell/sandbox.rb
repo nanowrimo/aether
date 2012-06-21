@@ -9,7 +9,7 @@ module Aether
       # A shortcut to +Instance.find+.
       #
       def instance(id = nil)
-        (id && Instance.find(id)) || Instance
+        id ? Instance.find(id) : Instance
       end
 
       # A shortcut to +Instance.all+.
@@ -35,6 +35,11 @@ module Aether
       #
       def volumes
         Volume.all
+      end
+
+      def method_missing(method, *args)
+        super unless InstanceCollection.instance_methods.include?(method.to_s)
+        Instance.all.send(method, *args)
       end
     end
   end

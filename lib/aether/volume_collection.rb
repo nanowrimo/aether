@@ -6,10 +6,16 @@ module Aether
       where { attached_to?(instance_id) }
     end
 
+    # Returns volumes that are available.
+    #
+    def available
+      where { status == 'available' }
+    end
+
     # Detaches all volumes in the collection.
     #
-    def detach!
-      each(&:detach!)
+    def detach!(options = {})
+      each { |volume| volume.detach!(options) }
     end
 
     # Returns volumes that belong to the given instance name.
@@ -22,6 +28,12 @@ module Aether
     #
     def mounts_at(dir, position = nil)
       where { mount_point == dir && (position.nil? || raid_position == position) }
+    end
+
+    # Waits for all volumes in the collection.
+    #
+    def wait_for(&blk)
+      each { |volume| volume.wait_for(&blk) }
     end
 
     # Returns volumes that match the given block (it returns true when

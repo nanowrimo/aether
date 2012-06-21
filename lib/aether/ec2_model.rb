@@ -16,10 +16,31 @@ module Aether
       @info[key]
     end
 
+    protected
+
+    def around_callback(event, *arguments, &blk)
+      invoke_callback(:before, event)
+      result = yield *arguments
+      invoke_callback(:after, event)
+      result
+    end
+
+    def invoke_callback(context, event)
+      self.class.callbacks[event][context].each { |callback| instance_exec(&callback) }
+    rescue NoMethodError
+      nil
+    end
+
     module ClassMethods
 
+      attr_accessor :callbacks
+
+      def after(event, &blk)
+        define_callback(:after, event, &blk)
+      end
+
       def before(event, &blk)
-        # TODO
+        define_callback(:before, event, &blk)
       end
 
       def has_ec2_option(name)
@@ -36,6 +57,16 @@ module Aether
 
       def has_ec2_options(*names)
         names.each { |name| has_ec2_option(name) }
+      end
+
+      private
+
+      def define_callback(context, event, &blk)
+        self.callbacks ||= {}
+        self.callbacks[event] ||= {}
+        self.callbacks[event][context] ||= []
+
+        self.callbacks[event][context] << blk
       end
     end
   end

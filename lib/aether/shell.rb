@@ -30,5 +30,12 @@ module Aether
       Ripl.start :binding => Sandbox.new(@connection).instance_exec { binding },
                  :prompt => proc { Connection.latest.dns.zone.name + ">> " }
     end
+
+    # Evaluates a single command in the context of the shell and outputs the
+    # result.
+    #
+    def evaluate(*command)
+      Sandbox.new(@connection).instance_eval(command.join(' '))
+    end
   end
 end

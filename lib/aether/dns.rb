@@ -71,6 +71,10 @@ module Aether
     def inspect
       "#<dns:#{name}:#{type}:#{ttl}:#{values.join(',')}>"
     end
+
+    def update(params = {})
+      update(params[:name], params[:type], params[:ttl], params[:values])
+    end
   end
 
   class DnsRecord < Route53::DNSRecord
