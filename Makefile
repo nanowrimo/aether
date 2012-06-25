@@ -18,6 +18,14 @@ install :
 	find lib/aether/instance -mindepth 1 -maxdepth 1 -type f \
 	  -not -name ".*" \
 	  -exec install -o root -m 755 {} "$(PREFIX)/lib/aether/instance" \;
+	install -d -o root -m 755 "$(PREFIX)/lib/aether/instance_helpers"
+	find lib/aether/instance_helpers -mindepth 1 -maxdepth 1 -type f \
+	  -not -name ".*" \
+	  -exec install -o root -m 755 {} "$(PREFIX)/lib/aether/instance_helpers" \;
+	install -d -o root -m 755 "$(PREFIX)/lib/aether/instance_promoter"
+	find lib/aether/instance_promoter -mindepth 1 -maxdepth 1 -type f \
+	  -not -name ".*" \
+	  -exec install -o root -m 755 {} "$(PREFIX)/lib/aether/instance_promoter" \;
 	install -d -o root -m 755 "$(PREFIX)/lib/aether/shell"
 	find lib/aether/shell -mindepth 1 -maxdepth 1 -type f \
 	  -not -name ".*" \
