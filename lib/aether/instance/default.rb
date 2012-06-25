@@ -74,12 +74,12 @@ module Aether
         Volume.all(connection).attached_to(self)
       end
 
-      def create_dns_alias(name)
+      def create_dns_alias(name, ttl = nil)
         assert_launched
 
-        notify 'creating new DNS alias', name, @info.dnsName
+        notify 'creating new DNS alias', name, ttl, @info.dnsName
 
-        @connection.dns.create_alias(name, @info.dnsName)
+        @connection.dns.create_alias(name, @info.dnsName, ttl)
       end
 
       def demote!(new_leader = nil)

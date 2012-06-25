@@ -32,10 +32,10 @@ module Aether
       record
     end
 
-    # Creates a new CNAME record using the default TTL.
+    # Creates a new CNAME record using the given or default TTL.
     #
-    def create_alias(alias_name, canonical_name)
-      create(alias_name, 'CNAME', @options[:dns_ttl], [canonical_name])
+    def create_alias(alias_name, canonical_name, ttl = nil)
+      create(alias_name, 'CNAME', ttl || @options[:dns_ttl], [canonical_name])
     end
 
     # Finds all CNAME records for the given name.

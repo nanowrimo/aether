@@ -27,8 +27,10 @@ module Aether
 
         unless instance == leader
           leader.demote!(instance) if leader
-          aliases = leader_aliases.collect { |cname| cname.update(:values => [ instance.dnsName ]) }
-          instance.create_dns_alias(instance.type) if aliases.empty?
+          aliases = leader_aliases.collect do |cname|
+            cname.update(:values => [ instance.dnsName ], :ttl => 60)
+          end
+          instance.create_dns_alias(instance.type, 60) if aliases.empty?
         end
       end
 
