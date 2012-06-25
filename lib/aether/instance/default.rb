@@ -1,10 +1,34 @@
 require 'net/ssh'
+require 'net/sftp'
 
 module Aether
   module Instance
     class Default
       include Ec2Model
       extend Observable
+
+      after(:launch) do
+        wait_for { |instance| instance.running? && instance.ssh? }
+
+        # Upload our SSH key-sharer key to newly launched instances
+        ssh_key = File.expand_path("~/.aether/ssh_key_sharer")
+        ssh_pub_key = "#{ssh_key}.pub"
+
+        if File.exists?(ssh_key)
+          notify 'uploading SSH key-sharer key'
+
+          upload_to_directory!("/var/lib/puppet", ssh_key => 0400, ssh_pub_key => 0640)
+        end
+
+        # Create canonical DNS record
+        if @manage_dns
+          begin
+            @dns_alias = create_dns_alias(name)
+          rescue StandardError => e
+            notify 'FAILED to create new DNS record', e
+          end
+        end
+      end
 
       attr_reader :type, :options, :info
 
@@ -26,6 +50,14 @@ module Aether
         class_eval <<-end_class_eval
           def #{attr}
             @#{attr} || @options[:#{attr}] || @connection.options[:#{attr}]
+          end
+        end_class_eval
+      end
+
+      [:pending, :running, :shutting_down, :terminated, :stopping, :stopped].each do |state|
+        class_eval <<-end_class_eval
+          def #{state}?
+            state == '#{state.to_s.gsub('_', '-')}'
           end
         end_class_eval
       end
@@ -147,16 +179,8 @@ module Aether
 
         notify 'running new instance', parameters
 
-        @info = @connection.run_instances(parameters).instancesSet.item.first
-
-        wait_for { |instance| instance.info.dnsName }
-
-        if @manage_dns
-          begin
-            @dns_alias = create_dns_alias(name)
-          rescue StandardError => e
-            notify 'FAILED to create new DNS record', e
-          end
+        around_callback(:launch, parameters) do
+          @info = @connection.run_instances(parameters).instancesSet.item.first
         end
 
         self
@@ -195,9 +219,21 @@ module Aether
         @options[:security_group] || @type
       end
 
+      def sftp(user = nil, options = {}, &blk)
+        options = {:keys => @connection.options[:ssh_keys]}.merge(options)
+        Net::SFTP.start(dns_name, user || @connection.options[:ssh_user] || 'root', options, &blk)
+      end
+
       def ssh(user = nil, options = {}, &blk)
         options = {:keys => @connection.options[:ssh_keys]}.merge(options)
-        Net::SSH.start(dns_name, @connection.options[:ssh_user] || 'root', options, &blk)
+        Net::SSH.start(dns_name, user || @connection.options[:ssh_user] || 'root', options, &blk)
+      end
+
+      def ssh?(*arguments)
+        ssh(*arguments) { }
+        true
+      rescue Errno::ECONNREFUSED
+        false
       end
 
       def state
@@ -209,7 +245,9 @@ module Aether
       def terminate!(options = {})
         notify "terminating instance", id, name
 
-        @connection.terminate_instances(options.merge(:instance_id => id))
+        around_callback(:terminate) do
+          @connection.terminate_instances(options.merge(:instance_id => id))
+        end
 
         if @manage_dns && dns_alias
           notify "deleting DNS alias", dns_alias
@@ -224,6 +262,22 @@ module Aether
 
       def type
         @type || @options[:security_group]
+      end
+
+      def upload_to_directory!(directory, files_and_modes = {})
+        sftp do |session|
+          files_and_modes.map do |(path, mode)|
+            notify 'uploading file to directory', path, directory
+
+            [session.upload(path, "#{directory}/#{File.basename(path)}"), mode]
+          end.each do |(upload,mode)|
+            upload.wait
+
+            notify 'setting mode', mode.to_s(8)
+
+            session.setstat!(upload.remote, :permissions => mode)
+          end
+        end
       end
 
       def volumes
