@@ -30,7 +30,3 @@ install :
 	find lib/aether/shell -mindepth 1 -maxdepth 1 -type f \
 	  -not -name ".*" \
 	  -exec install -o root -m 755 {} "$(PREFIX)/lib/aether/shell" \;
-	install -d -o root -m 755 "$(PREFIX)/lib/aether/snapshot"
-	find lib/aether/snapshot -mindepth 1 -maxdepth 1 -type f \
-	  -not -name ".*" \
-	  -exec install -o root -m 755 {} "$(PREFIX)/lib/aether/snapshot" \;
