@@ -17,6 +17,7 @@ module Aether
     autoload :DevFilaments, 'aether/instance/dev_filaments'
     autoload :Filaments, 'aether/instance/filaments'
     autoload :Store, 'aether/instance/store'
+    autoload :StoreWorker, 'aether/instance/store_worker'
     autoload :Util, 'aether/instance/util'
     autoload :Web, 'aether/instance/web'
 
