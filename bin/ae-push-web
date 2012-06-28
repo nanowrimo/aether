@@ -66,7 +66,7 @@ if [[ $LOCAL ]]; then
   rsync $RSYNC_OPTS ./ "$remote_directory"
 else
   # perform sync to each web host
-  hosts=$(rudy-ec2 -f tsv instances -g $GROUP | awk '$11 == "running" && $8 ~ /./ { print $8 }')
+  hosts=$(rudy-ec2 -f tsv instances -g $GROUP | awk '($11 == "running" || $10 == "running") && $8 ~ /./ { print $8 }')
 
   if [[ $? -gt 0 ]]; then
     echo "failed to get web instances"
