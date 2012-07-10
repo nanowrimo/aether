@@ -34,10 +34,14 @@ module Aether
 
       def initialize(type, options = {})
         @type = type
-        @options = {:image_name => "base-debian-6", :promote_by => :null}.merge(options)
-        @info = yield if block_given?
 
-        @promoter = InstancePromoter.new(@options[:promote_by], self)
+        @options = {
+          :image_name => "base-debian-6",
+          :promote_by => :null,
+          :configure_by => :puppet
+        }.merge(options)
+
+        @info = yield if block_given?
 
         @manage_dns = true
       end
@@ -74,6 +78,11 @@ module Aether
         Volume.all(connection).attached_to(self)
       end
 
+      def configure!(*args)
+        notify 'configuring instance', self
+        around_callback(:configure) { configurator.configure!(*args) }
+      end
+
       def create_dns_alias(name, ttl = nil)
         assert_launched
 
@@ -83,7 +92,7 @@ module Aether
       end
 
       def demote!(new_leader = nil)
-        around_callback(:demotion, new_leader) { @promoter.demote! }
+        around_callback(:demotion, new_leader) { promoter.demote! }
       end
 
       def detach_volumes!
@@ -105,7 +114,11 @@ module Aether
       end
 
       def dns_name
-        (dns_alias && dns_alias.name.chomp('.')) || (@info && @info.dnsName)
+        (dns_alias && dns_alias.name.chomp('.')) || ec2_dns_name
+      end
+
+      def ec2_dns_name
+        @info && @info.dnsName
       end
 
       def exec!(*commands, &block)
@@ -201,7 +214,7 @@ module Aether
       end
 
       def promote!
-        around_callback(:promotion) { @promoter.promote! }
+        around_callback(:promotion) { promoter.promote! }
       end
 
       def reboot!(options = {})
@@ -225,8 +238,12 @@ module Aether
       end
 
       def ssh(user = nil, options = {}, &blk)
-        options = {:keys => @connection.options[:ssh_keys]}.merge(options)
-        Net::SSH.start(dns_name, user || @connection.options[:ssh_user] || 'root', options, &blk)
+        options = {
+          :user => @connection.options[:ssh_user] || 'root',
+          :keys => @connection.options[:ssh_keys]
+        }.merge(options)
+
+        Net::SSH.start(ec2_dns_name, options[:user], options, &blk)
       end
 
       def ssh?(*arguments)
@@ -300,9 +317,17 @@ module Aether
         raise UnlaunchedInstanceError unless launched?
       end
 
+      def configurator
+        InstanceConfigurator.new(@options[:configure_by], self)
+      end
+
       def notify(*args)
         Aether::Instance::Default.changed
         Aether::Instance::Default.notify_observers(*args)
+      end
+
+      def promoter
+        InstancePromoter.new(@options[:promote_by], self)
       end
 
       def resolve_image

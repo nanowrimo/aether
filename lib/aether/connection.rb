@@ -102,6 +102,8 @@ module Aether
     # Determines whether we're executing from inside AWS.
     #
     def within_aws?
+      return @options[:within_aws] if @options.include?(:within_aws)
+
       @aws_addr_info ||= Socket.getaddrinfo("169.254.169.254", 80, Socket::AF_INET)
       @aws_addr_info.first[2] == "instance-data.ec2.internal"
     rescue SocketError

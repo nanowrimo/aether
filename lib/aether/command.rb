@@ -66,6 +66,10 @@ module Aether
           @options[:verbose] += 1
         end
 
+        parser.on("--within-aws", "Whether executing within the internal AWS network.") do
+          @options[:within_aws] = true
+        end
+
         parser.on_tail("-h", "--help", "Show this message.") do
           puts parser
           exit

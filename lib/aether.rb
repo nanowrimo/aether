@@ -10,6 +10,7 @@ module Aether
   autoload :Ec2Model, 'aether/ec2_model'
   autoload :Instance, 'aether/instance'
   autoload :InstanceCollection, 'aether/instance_collection'
+  autoload :InstanceConfigurator, 'aether/instance_configurator'
   autoload :InstanceHelpers, 'aether/instance_helpers'
   autoload :InstancePromoter, 'aether/instance_promoter'
   autoload :MetaDisk, 'aether/meta_disk'
