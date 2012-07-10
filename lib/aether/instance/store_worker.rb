@@ -5,9 +5,6 @@ module Aether
       after(:launch) do
         # reconfigure store instance to update nfs permissions, etc.
         Instance.all.running.in('store').each(&:configure!)
-
-        # configure ourself
-        configure!
       end
 
       def initialize(options = {})
