@@ -7,8 +7,12 @@ module Aether
       # Instantiates an instance configurator of the given type.
       #
       def new(type, instance)
-        klass = self.const_get(classify(type))
-        klass.ancestors.include?(Base) ? klass.new(instance) : Base.new(instance)
+        if type
+          klass = self.const_get(classify(type))
+          klass.ancestors.include?(Base) ? klass.new(instance) : Base.new(instance)
+        else
+          Base.new(instance)
+        end
       end
 
       private

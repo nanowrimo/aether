@@ -15,6 +15,7 @@ module Aether
     autoload :Default, 'aether/instance/default'
     autoload :DevDatabase, 'aether/instance/dev_database'
     autoload :DevFilaments, 'aether/instance/dev_filaments'
+    autoload :DevWeb, 'aether/instance/dev_web'
     autoload :Filaments, 'aether/instance/filaments'
     autoload :Store, 'aether/instance/store'
     autoload :StoreWorker, 'aether/instance/store_worker'

@@ -8,20 +8,24 @@ module Aether
       extend Observable
 
       after(:launch) do
-        wait_for { |instance| instance.running? && instance.ssh? }
+        if @options[:configure_by] == :puppet
+          wait_for { |instance| instance.running? && instance.ssh? }
 
-        # Upload our SSH key-sharer key to newly launched instances
-        ssh_key = File.expand_path("~/.aether/ssh_key_sharer")
-        ssh_pub_key = "#{ssh_key}.pub"
+          # Upload our SSH key-sharer key to newly launched instances
+          ssh_key = File.expand_path("~/.aether/ssh_key_sharer")
+          ssh_pub_key = "#{ssh_key}.pub"
 
-        if File.exists?(ssh_key)
-          notify 'uploading SSH key-sharer key'
+          if File.exists?(ssh_key)
+            notify 'uploading SSH key-sharer key'
 
-          upload_to_directory!("/var/lib/puppet", ssh_key => 0400, ssh_pub_key => 0640)
+            upload_to_directory!("/var/lib/puppet", ssh_key => 0400, ssh_pub_key => 0640)
+          end
         end
 
         # Create canonical DNS record
         if @manage_dns
+          wait_for { |instance| instance.running? }
+
           begin
             @dns_alias = create_dns_alias(name)
           rescue StandardError => e

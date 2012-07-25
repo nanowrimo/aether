@@ -18,6 +18,10 @@ install :
 	find lib/aether/instance -mindepth 1 -maxdepth 1 -type f \
 	  -not -name ".*" \
 	  -exec install -o root -m 755 {} "$(PREFIX)/lib/aether/instance" \;
+	install -d -o root -m 755 "$(PREFIX)/lib/aether/instance_configurator"
+	find lib/aether/instance_configurator -mindepth 1 -maxdepth 1 -type f \
+	  -not -name ".*" \
+	  -exec install -o root -m 755 {} "$(PREFIX)/lib/aether/instance_configurator" \;
 	install -d -o root -m 755 "$(PREFIX)/lib/aether/instance_helpers"
 	find lib/aether/instance_helpers -mindepth 1 -maxdepth 1 -type f \
 	  -not -name ".*" \
