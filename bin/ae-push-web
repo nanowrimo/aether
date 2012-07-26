@@ -5,7 +5,7 @@
 #
 
 # rsync options
-RSYNC_OPTS="-rvltp"
+RSYNC_OPTS="-rvltpog"
 
 # options
 GROUP=web
