@@ -5,7 +5,7 @@
 #
 
 # rsync options
-RSYNC_OPTS="-rvlt"
+RSYNC_OPTS="-rvltp"
 
 # options
 GROUP=web
