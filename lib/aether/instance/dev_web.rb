@@ -3,9 +3,8 @@ module Aether
     class DevWeb < Default
       def initialize(options = {})
         super("dev-web", {
-          :image_name => "dev-web",
-          :instance_type => "c1.medium",
-          :configure_by => nil
+          :image_name => "base",
+          :instance_type => "c1.medium"
         }.merge(options))
       end
     end
