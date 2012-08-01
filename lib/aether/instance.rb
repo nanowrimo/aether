@@ -12,6 +12,7 @@ module Aether
       "c1.xlarge" => "x86_64",
     }
 
+    autoload :Camp, 'aether/instance/camp'
     autoload :Default, 'aether/instance/default'
     autoload :DevDatabase, 'aether/instance/dev_database'
     autoload :DevFilaments, 'aether/instance/dev_filaments'
