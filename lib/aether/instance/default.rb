@@ -41,6 +41,7 @@ module Aether
 
         @options = {
           :image_name => "base-debian-6",
+          :instance_type => 'm1.small',
           :promote_by => :null,
           :configure_by => :puppet
         }.merge(options)

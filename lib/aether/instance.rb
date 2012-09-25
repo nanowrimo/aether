@@ -1,7 +1,7 @@
 module Aether
   module Instance
     ARCHITECTURES = {
-      "m1.small" => "i386",
+      "m1.small" => "x86_64",
       "m1.medium" => "x86_64",
       "m1.large" => "x86_64",
       "m1.xlarge" => "x86_64",
@@ -52,17 +52,17 @@ module Aether
 
       # Instantiates an instance of the given type.
       #
-      def new(type, connection = nil, &blk)
-        klass = classify(type)
+      def new(type = nil, connection = nil, &blk)
+        klass = type && classify(type)
 
-        instance = if self.const_defined?(klass) && (klass = self.const_get(klass))
+        instance = if klass && self.const_defined?(klass) && (klass = self.const_get(klass))
           if klass.ancestors.include?(Default)
             klass.new(&blk)
           else
             Default.new(type, &blk)
           end
         else
-          Default.new(type, &blk)
+          Default.new(type || 'default', &blk)
         end
 
         instance.connection = connection || Connection.latest
