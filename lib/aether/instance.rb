@@ -14,6 +14,7 @@ module Aether
 
     autoload :Camp, 'aether/instance/camp'
     autoload :Default, 'aether/instance/default'
+    autoload :Database, 'aether/instance/database'
     autoload :DevDatabase, 'aether/instance/dev_database'
     autoload :DevFilaments, 'aether/instance/dev_filaments'
     autoload :DevWeb, 'aether/instance/dev_web'
