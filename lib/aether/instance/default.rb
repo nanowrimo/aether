@@ -20,6 +20,9 @@ module Aether
 
             upload_to_directory!("/var/lib/puppet", ssh_key => 0400, ssh_pub_key => 0640)
           end
+
+          # Prepend PATH environment variable with the Ruby gems binary path
+          exec!("echo 'PATH=\"/var/lib/gems/1.8/bin:'\"$PATH\"'\"' >> /etc/environment")
         end
 
         # Create canonical DNS record
