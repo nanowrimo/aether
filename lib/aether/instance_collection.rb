@@ -4,7 +4,7 @@ module Aether
     # returns a hash keyed by the instance host name with the output for each.
     #
     def exec!(cmd, &blk)
-      inject({}) { |outputs,i| i.ssh { |sh| outputs[i.dns_name] = sh.exec!(cmd, &blk) }; outputs }
+      inject({}) { |outputs,i| i.ssh { |sh| outputs[i.name] = sh.exec!(cmd, &blk) }; outputs }
     end
 
     # Returns instances that are currently running.
