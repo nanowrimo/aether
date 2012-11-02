@@ -5,7 +5,7 @@ module Aether
 
       def initialize(options = {})
         super("database", {
-          :instance_type => "m2.2xlarge",
+          :instance_type => "m2.4xlarge",
           :image_name => "database-master",
           :availability_zone => 'us-east-1b',
           :configure_by => nil

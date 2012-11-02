@@ -18,9 +18,10 @@ module Aether
       options[:dns_zone] += '.' unless options[:dns_zone].end_with?('.')
 
       # resolve the configured zone
-      @zone = @r53.get_zones.detect { |zone| zone.name == options[:dns_zone] }
-
-      raise DnsError.new("zone #{options[:dns_zone]} does not exist") unless @zone
+      unless options[:skip_dns]
+        @zone = @r53.get_zones.detect { |zone| zone.name == options[:dns_zone] }
+        raise DnsError.new("zone #{options[:dns_zone]} does not exist") unless @zone
+      end
     end
 
     # Creates and returns a new DNS record.
