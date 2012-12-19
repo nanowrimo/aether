@@ -2,6 +2,7 @@ module Aether
   module InstancePromoter
 
     autoload :DnsAlias, 'aether/instance_promoter/dns_alias'
+    autoload :ElasticIp, 'aether/instance_promoter/elastic_ip'
     autoload :Null, 'aether/instance_promoter/null'
 
     class << self

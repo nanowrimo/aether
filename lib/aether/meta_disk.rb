@@ -5,7 +5,7 @@ module Aether
     end
 
     class Device
-      PATTERN = /^ARRAY ([^ ]+) level=([^ ]+) metadata=(\d+(?:\.\d+)) num-devices=(\d+) UUID=([^ ]+) name=([^ ]+)$/
+      PATTERN = /^ARRAY ([^ ]+) level=([^ ]+) (?:metadata=(\d+(?:\.\d+)) )?num-devices=(\d+) UUID=([^ ]+)(?: name=([^ ]+))?$/
 
       class << self
         def parse(instance, output)
@@ -14,7 +14,7 @@ module Aether
           output.each_line do |line|
             if m = line.match(PATTERN)
               devices << new(instance, :path => m[1], :level => m[2], :metadata => m[3].to_f,
-                                       :devices => m[4].to_i, :uuid => m[5], :name => m[6])
+                                       :devices => m[4].to_i, :uuid => m[5].chomp, :name => m[6])
             end
           end
 
@@ -45,6 +45,10 @@ module Aether
         e.exit_status != 4
       else
         true
+      end
+
+      def check(type)
+        @instance.exec!("fsck.#{type} #{path}")
       end
 
       def disassemble!
