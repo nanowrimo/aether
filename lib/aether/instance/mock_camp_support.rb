@@ -1,9 +1,8 @@
 module Aether
   module Instance
     class MockCampSupport < Default
-      def initialize(options = {})
-        super("mock-camp-support", {:instance_type => "m1.large"}.merge(options))
-      end
+      self.type = "mock-camp-support"
+      self.default_options = {:instance_type => "m1.large"}
     end
   end
 end

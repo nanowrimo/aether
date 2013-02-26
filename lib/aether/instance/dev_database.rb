@@ -3,6 +3,14 @@ module Aether
     class DevDatabase < Default
       include InstanceHelpers::MetaDisk
 
+      self.type = "dev-database"
+      self.default_options = {
+        :instance_type => "m1.large",
+        :image_name => "dev-master-db",
+        :availability_zone => 'us-east-1b',
+        :promote_by => :dns_alias
+      }
+
       before(:demotion) do
         exec!("invoke-rc.d mysql stop", "umount /var/lib/mysql")
         exec!("invoke-rc.d nfs-kernel-server stop", "umount /var/lib/drupal")
@@ -25,15 +33,6 @@ module Aether
 
         exec!("mount /var/lib/drupal", "invoke-rc.d nfs-kernel-server restart")
         exec!("mount /var/lib/mysql", "invoke-rc.d mysql start")
-      end
-
-      def initialize(options = {})
-        super("dev-database", {
-          :instance_type => "m1.large",
-          :image_name => "dev-master-db",
-          :availability_zone => 'us-east-1b',
-          :promote_by => :dns_alias
-        }.merge(options))
       end
     end
   end

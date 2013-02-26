@@ -7,6 +7,16 @@ module Aether
       include Ec2Model
       extend Observable
 
+      class << self
+        attr_accessor :default_options, :type, :manage_dns
+
+        def type
+          @type || 'default'
+        end
+      end
+
+      self.default_options = {}
+
       after(:launch) do
         if @options[:configure_by] == :puppet
           wait_for { |instance| instance.running? && instance.ssh? }
@@ -26,7 +36,7 @@ module Aether
         end
 
         # Create canonical DNS record
-        if @manage_dns
+        if manage_dns?
           wait_for { |instance| instance.running? }
 
           begin
@@ -37,28 +47,25 @@ module Aether
         end
       end
 
-      attr_reader :type, :options, :info
+      attr_reader :options, :info
 
-      def initialize(type, options = {})
-        @type = type
-
+      def initialize(options = {})
         @options = {
           :image_name => "base-debian-6",
           :instance_type => 'm1.small',
+          :architecture => 'x86_64',
           :promote_by => :null,
           :configure_by => :puppet
-        }.merge(options)
+        }.merge(self.class.default_options)
 
         @info = yield if block_given?
-
-        @manage_dns = true
       end
 
       def ==(other)
         other.is_a?(::Aether::Instance::Default) && other.id == id
       end
 
-      [:key_name, :availability_zone, :instance_type, :image_name].each do |attr|
+      [:key_name, :availability_zone, :architecture, :instance_type, :image_name].each do |attr|
         class_eval <<-end_class_eval
           def #{attr}
             @#{attr} || @options[:#{attr}] || @connection.options[:#{attr}]
@@ -72,10 +79,6 @@ module Aether
             state == '#{state.to_s.gsub('_', '-')}'
           end
         end_class_eval
-      end
-
-      def architecture
-        ARCHITECTURES[instance_type]
       end
 
       def attach_volumes!
@@ -117,7 +120,7 @@ module Aether
       end
 
       def dns_alias
-        return nil unless @manage_dns
+        return nil unless manage_dns?
         @dns_alias ||= @connection.dns.aliases(name).first
       end
 
@@ -217,6 +220,10 @@ module Aether
         Time.parse(@info.launchTime)
       end
 
+      def manage_dns?
+        self.class.manage_dns || true
+      end
+
       def name
         "#{type}-#{id[2,10]}"
       end
@@ -237,7 +244,7 @@ module Aether
       end
 
       def security_group
-        @options[:security_group] || @type
+        @options[:security_group] || self.class.type
       end
 
       def sftp(user = nil, options = {}, &blk)
@@ -274,7 +281,7 @@ module Aether
           @connection.terminate_instances(options.merge(:instance_id => id))
         end
 
-        if @manage_dns && dns_alias
+        if manage_dns? && dns_alias
           notify "deleting DNS alias", dns_alias
 
           dns_alias.delete
@@ -286,7 +293,7 @@ module Aether
       end
 
       def type
-        @type || @options[:security_group]
+        self.class.type || @options[:security_group]
       end
 
       def upload_to_directory!(directory, files_and_modes = {})

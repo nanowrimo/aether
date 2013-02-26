@@ -3,6 +3,17 @@ module Aether
     class Database < Default
       include InstanceHelpers::MetaDisk
 
+      self.type = "database"
+      self.default_options = {
+        :type => "database",
+        :elastic_ip => "",
+        :instance_type => "m2.4xlarge",
+        :image_name => "database-master",
+        :availability_zone => "us-east-1b",
+        :promote_by => :elastic_ip,
+        :configure_by => nil
+      }
+
       before(:demotion) do
         exec!("invoke-rc.d mysql stop", "umount /var/lib/mysql", "umount /mnt/mysqld")
         meta_disk_devices.each(&:disassemble!)
@@ -20,17 +31,6 @@ module Aether
 
         exec!("ln -nfs #{mysql_sized_config_path} /etc/mysql/my-sized.cnf")
         exec!("mount /var/lib/mysql", "mount /mnt/mysqld", "invoke-rc.d mysql start")
-      end
-
-      def initialize(options = {})
-        super("database", {
-          :elastic_ip => "",
-          :instance_type => "m2.4xlarge",
-          :image_name => "database-master",
-          :availability_zone => 'us-east-1b',
-          :promote_by => :elastic_ip,
-          :configure_by => nil
-        }.merge(options))
       end
 
       def mysql_sized_config_path

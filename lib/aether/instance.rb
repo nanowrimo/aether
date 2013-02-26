@@ -1,17 +1,5 @@
 module Aether
   module Instance
-    ARCHITECTURES = {
-      "m1.small" => "x86_64",
-      "m1.medium" => "x86_64",
-      "m1.large" => "x86_64",
-      "m1.xlarge" => "x86_64",
-      "m2.xlarge" => "x86_64",
-      "m2.2xlarge" => "x86_64",
-      "m2.4xlarge" => "x86_64",
-      "c1.medium" => "i386",
-      "c1.xlarge" => "x86_64",
-    }
-
     autoload :Camp, 'aether/instance/camp'
     autoload :Default, 'aether/instance/default'
     autoload :Database, 'aether/instance/database'
@@ -24,6 +12,7 @@ module Aether
     autoload :MockCamp, 'aether/instance/mock_camp'
     autoload :MockCampSupport, 'aether/instance/mock_camp_support'
     autoload :MockCampProxy, 'aether/instance/mock_camp_proxy'
+    autoload :MockDatabase, 'aether/instance/mock_database'
     autoload :Store, 'aether/instance/store'
     autoload :StoreWorker, 'aether/instance/store_worker'
     autoload :Util, 'aether/instance/util'
@@ -65,10 +54,10 @@ module Aether
           if klass.ancestors.include?(Default)
             klass.new(&blk)
           else
-            Default.new(type, &blk)
+            Default.new(&blk)
           end
         else
-          Default.new(type || 'default', &blk)
+          Default.new(&blk)
         end
 
         instance.connection = connection || Connection.latest

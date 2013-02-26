@@ -3,14 +3,13 @@ module Aether
     class DatabaseSlave < Default
       include InstanceHelpers::MetaDisk
 
-      def initialize(options = {})
-        super("database-slave", {
-          :instance_type => "m2.4xlarge",
-          :image_name => "database-slave",
-          :availability_zone => 'us-east-1b',
-          :configure_by => nil
-        }.merge(options))
-      end
+      self.type = "database-slave"
+      self.default_options = {
+        :instance_type => "m2.4xlarge",
+        :image_name => "database-slave",
+        :availability_zone => 'us-east-1b',
+        :configure_by => nil
+      }
     end
   end
 end
