@@ -1,3 +1,5 @@
+require 'shellwords'
+
 module Aether
   class Shell
     class Sandbox
@@ -23,6 +25,17 @@ module Aether
       #
       def dns(&blk)
         block_given? ? @connection.dns.where(&blk) : @connection.dns
+      end
+
+      # Opens the given resource or resources. Currently only supported in OS
+      # X (using the `open` command).
+      #
+      def open(*resources)
+        resources.tap { open_url(*resources.flatten.collect(&:url)) }
+      end
+
+      def open_url(*urls)
+        `open #{urls.map(&:to_s).map(&:shellescape).join(' ')}`
       end
 
       # A shortcut to +Volume.find+.

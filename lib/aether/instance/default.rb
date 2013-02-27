@@ -1,5 +1,6 @@
 require 'net/ssh'
 require 'net/sftp'
+require 'uri'
 
 module Aether
   module Instance
@@ -252,9 +253,15 @@ module Aether
         Net::SFTP.start(dns_name, user || @connection.options[:ssh_user] || 'root', options, &blk)
       end
 
+      # Returns an ssh URL to the instance.
+      #
+      def url
+        URI::Generic.build(:scheme => 'ssh', :userinfo => ssh_user, :host => ec2_dns_name)
+      end
+
       def ssh(user = nil, options = {}, &blk)
         options = {
-          :user => @connection.options[:ssh_user] || 'root',
+          :user => ssh_user,
           :keys => @connection.options[:ssh_keys]
         }.merge(options)
 
@@ -353,6 +360,10 @@ module Aether
 
       def runs_on?(image)
         image_name == image.name && architecture == image.architecture
+      end
+
+      def ssh_user
+        @connection.options[:ssh_user] || 'root'
       end
     end
   end
