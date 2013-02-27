@@ -1,0 +1,10 @@
+#!/usr/bin/env ruby
+#
+# Executes a single command in the Aether Shell and outputs the result.
+#
+
+$:.unshift(File.join(File.dirname(File.dirname(__FILE__)), 'lib'))
+
+require 'aether'
+
+puts Aether::Shell.new.run(:evaluate, ARGV)
