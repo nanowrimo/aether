@@ -12,9 +12,9 @@ module Aether
           devices = []
 
           output.each_line do |line|
-            if m = line.match(PATTERN)
+            if m = line.chomp.match(PATTERN)
               devices << new(instance, :path => m[1], :level => m[2], :metadata => m[3].to_f,
-                                       :devices => m[4].to_i, :uuid => m[5].chomp, :name => m[6])
+                                       :devices => m[4].to_i, :uuid => m[5], :name => m[6])
             end
           end
 
