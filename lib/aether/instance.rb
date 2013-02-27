@@ -15,6 +15,7 @@ module Aether
     autoload :MockDatabase, 'aether/instance/mock_database'
     autoload :Store, 'aether/instance/store'
     autoload :StoreWorker, 'aether/instance/store_worker'
+    autoload :Stressor, 'aether/instance/stressor'
     autoload :Util, 'aether/instance/util'
     autoload :Web, 'aether/instance/web'
 

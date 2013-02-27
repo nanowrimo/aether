@@ -5,7 +5,6 @@ module Aether
 
       self.type = "database"
       self.default_options = {
-        :type => "database",
         :elastic_ip => "",
         :instance_type => "m2.4xlarge",
         :image_name => "database-master",

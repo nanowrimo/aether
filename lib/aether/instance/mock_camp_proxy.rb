@@ -2,7 +2,7 @@ module Aether
   module Instance
     class MockCampProxy < Default
       self.type = "mock-camp-proxy"
-      self.default_options = {:instance_type => "c1.medium"}
+      self.default_options = {:instance_type => "c1.medium", :promote_by => :dns_alias}
     end
   end
 end
