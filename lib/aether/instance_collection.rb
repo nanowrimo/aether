@@ -15,8 +15,8 @@ module Aether
 
     # Returns instances from the given group.
     #
-    def in(grp)
-      where { group == grp }
+    def in(*groups)
+      where { groups.include?(group) }
     end
 
     # Returns instances that are in the given state.

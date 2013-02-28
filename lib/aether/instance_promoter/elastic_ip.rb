@@ -25,8 +25,11 @@ module Aether
 
         unless instance == leader
           leader.demote!(instance) if leader
-          connection.associate_address(:public_ip => elastic.publicIp, :instance_id => instance.id)
+          public_ip = elastic.publicIp
+          connection.associate_address(:public_ip => public_ip, :instance_id => instance.id)
         end
+
+        instance.wait_for { |instance| instance.info.ipAddress == public_ip }
       end
 
       private

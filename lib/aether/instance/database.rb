@@ -20,7 +20,6 @@ module Aether
       end
 
       after(:promotion) do
-        # TODO Implement waiting for elastic-IP promotion to complete
         volumes.wait_for { |volume| volume.available? }
         attach_volumes!
         volumes.wait_for { |volume| volume.attached? && file_exists?(volume.device) }
