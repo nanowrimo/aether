@@ -8,6 +8,7 @@ module Aether
   autoload :Connection, 'aether/connection'
   autoload :Dns, 'aether/dns'
   autoload :Ec2Model, 'aether/ec2_model'
+  autoload :Environment, 'aether/environment'
   autoload :Instance, 'aether/instance'
   autoload :InstanceCollection, 'aether/instance_collection'
   autoload :InstanceConfigurator, 'aether/instance_configurator'
@@ -18,9 +19,16 @@ module Aether
   autoload :OptionParser, 'aether/option_parser'
   autoload :Volume, 'aether/volume'
   autoload :VolumeCollection, 'aether/volume_collection'
+  autoload :UserLibrary, 'aether/user_library'
 
   # Commands
   autoload :PuppetClassifier, 'aether/puppet_classifier'
   autoload :Launcher, 'aether/launcher'
   autoload :Shell, 'aether/shell'
+
+  class << self
+    attr_accessor :user_load_path
+  end
+
+  self.user_load_path = File.expand_path("~/.aether")
 end

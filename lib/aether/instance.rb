@@ -31,6 +31,7 @@ module Aether
     end
 
     class << self
+      include UserLibrary
 
       # Returns all instances from the given or latest connection.
       #
@@ -70,12 +71,6 @@ module Aether
       #
       def create(type, connection = nil)
         new(type).launch!
-      end
-
-      private
-
-      def classify(name)
-        name.to_s.gsub(/\/(.?)/) { "::#{$1.upcase}" }.gsub(/(?:^|_|-)(.)/) { $1.upcase }.to_sym
       end
     end
   end

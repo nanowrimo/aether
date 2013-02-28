@@ -74,7 +74,7 @@ module Aether
     end
 
     def update(params = {})
-      update(params[:name], params[:type], params[:ttl], params[:values])
+      super(params[:name], params[:type], params[:ttl], params[:values])
     end
   end
 
