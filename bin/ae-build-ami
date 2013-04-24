@@ -26,7 +26,8 @@ fi
 
 # get the latest revision of a registered images with this name
 echo "Getting the latest revision of this image..."
-ami_latest=$(rudy-ec2 images -o self \
+ami_latest=$(ec2-describe-images -O "$access_key" -W "$secret_key" -o self \
+  | gawk '$1 == "IMAGE" { print $3 }' \
   | gawk 'match($NF, /^\(?'$ami_bucket'\/'$ami_name'-r([0-9]+)\./, m) { print m[1]"\t"$NF }' \
   | sort -rnk 1 | head -n 1 | awk -F"\t" '{ print $2 }')
 
@@ -75,6 +76,5 @@ for point in ${mounts[@]}; do
 done
 
 # register AMI
-echo -n "Registering image... "
-ami_id=$(rudy-ec2 images -R $ami_bucket/$ami_name.manifest.xml)
-echo $ami_id
+echo "Registering image... "
+ec2-register "$ami_bucket/$ami_name.manifest.xml" -O "$access_key" -W "$secret_key"
