@@ -34,6 +34,11 @@ module Aether
 
           # Prepend PATH environment variable with the Ruby gems binary path
           exec!("echo 'PATH=\"/var/lib/gems/1.8/bin:'\"$PATH\"'\"' >> /etc/environment")
+
+          # Make sure that /mnt is mounted
+          # TODO Clean this mess up
+          device = volume_device('b')
+          exec!("[ -b '#{device}' ] && cut -d ' ' -f 1 /proc/mounts | grep -q '#{device}' || mount #{device} /mnt")
         end
 
         # Create canonical DNS record
@@ -257,6 +262,22 @@ module Aether
       #
       def url
         URI::Generic.build(:scheme => 'ssh', :userinfo => ssh_user, :host => ec2_dns_name)
+      end
+
+      # Returns the right block device path from the given name.
+      #
+      # If the running kernel uses 'xvd' device names, the result will be
+      # '/dev/xvd#{name}', otherwise it will be a scsi device like
+      # '/dev/sd#{name}'.
+      #
+      def volume_device(name)
+        root_device.match(%r{/xvd}) ? "/dev/xvd#{name}" : "/dev/sd#{name}"
+      end
+
+      # Returns the block device path mounted at '/'.
+      #
+      def root_device
+        @root_device ||= exec!("rdev").split(' ').first
       end
 
       def ssh(user = nil, options = {}, &blk)

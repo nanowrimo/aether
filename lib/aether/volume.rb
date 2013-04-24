@@ -17,8 +17,8 @@ module Aether
         end.extend(VolumeCollection)
       end
 
-      def root_devices
-        ('h'..'z').map { |letter| "/dev/sd#{letter}" }
+      def device_names
+        ('h'..'zz')
       end
     end
 
@@ -81,11 +81,9 @@ module Aether
     def device_for(instance)
       attached = instance.attached_volumes
 
-      device = Volume.root_devices.detect do |root_device|
-        not attached.any? { |volume| volume.root_device == root_device && !sibling?(volume) }
+      Volume.device_names.map { |name| instance.volume_device(name) }.detect do |device|
+        not attached.any? { |volume| volume.device == device }
       end
-
-      "#{device}#{raid_position}"
     end
 
     def for?(instance)
@@ -145,10 +143,6 @@ module Aether
     def refresh!
       @info = connection.describe_volumes(:volume_id => id).volumeSet.item.first
       self
-    end
-
-    def root_device
-      device && device.gsub(/\d+$/, '')
     end
 
     def sibling?(volume)
