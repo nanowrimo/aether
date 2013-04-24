@@ -15,13 +15,7 @@ module Aether
 
       raise DnsError.new("no DNS zone is configured") unless options.has_key?(:dns_zone)
 
-      options[:dns_zone] += '.' unless options[:dns_zone].end_with?('.')
-
-      # resolve the configured zone
-      unless options[:skip_dns]
-        @zone = @r53.get_zones.detect { |zone| zone.name == options[:dns_zone] }
-        raise DnsError.new("zone #{options[:dns_zone]} does not exist") unless @zone
-      end
+      self.zone = @options[:dns_zone] unless @options[:skip_dns]
     end
 
     # Creates and returns a new DNS record.
@@ -63,6 +57,12 @@ module Aether
     #
     def where(&blk)
       records.select { |record| record.instance_exec(&blk) }
+    end
+
+    def zone=(zone)
+      zone += "." unless zone.end_with?(".")
+      @zone = @r53.get_zones.detect { |z| z.name == zone }
+      raise DnsError.new("zone #{zone} does not exist") unless @zone
     end
   end
 
