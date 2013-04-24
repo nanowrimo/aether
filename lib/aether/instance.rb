@@ -1,5 +1,6 @@
 module Aether
   module Instance
+    autoload :Archive, 'aether/instance/archive'
     autoload :Camp, 'aether/instance/camp'
     autoload :Default, 'aether/instance/default'
     autoload :Database, 'aether/instance/database'
