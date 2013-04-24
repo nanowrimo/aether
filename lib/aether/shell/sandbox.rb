@@ -27,6 +27,22 @@ module Aether
         block_given? ? @connection.dns.where(&blk) : @connection.dns
       end
 
+      # Instantiate and launch one or the given number of instances of +type+.
+      # If a number is given, the array of instances is returned, otherwise
+      # just the single instance.
+      #
+      def launch(type, n = nil)
+        instances = (n || 1).times.collect { new(type).launch! }
+
+        n ? instances : instances.first
+      end
+
+      # A shortcut to +Instance.new+.
+      #
+      def new(*arguments)
+        Instance.new(*arguments)
+      end
+
       # Opens the given resource or resources. Currently only supported in OS
       # X (using the `open` command).
       #
