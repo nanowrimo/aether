@@ -67,7 +67,7 @@ module Aether
       end
 
       def method_missing(method, *args)
-        super unless InstanceCollection.instance_methods.include?(method.to_s)
+        super unless InstanceCollection.instance_methods.map(&:to_s).include?(method.to_s)
         Instance.all.send(method, *args)
       end
     end
