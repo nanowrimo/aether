@@ -21,12 +21,12 @@ module Aether
           @options[:config] = path
         end
 
-        @options[:access_key] ||= "/mnt/access.key"
+        @options[:access_key] ||= "/etc/ec2/access.key"
         parser.on("-a", "--access-key FILE", "A file containing the AWS access key.") do |path|
           @options[:access_key] = path
         end
 
-        @options[:secret_key] ||= "/mnt/secret.key"
+        @options[:secret_key] ||= "/etc/ec2/secret.key"
         parser.on("-s", "--secret-key FILE", "A file containing the AWS secret key.") do |path|
           @options[:secret_key] = path
         end
