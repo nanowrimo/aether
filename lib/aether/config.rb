@@ -1,6 +1,11 @@
 module Aether
   class Config
     class << self
+      def from_file(path)
+        full_path = File.expand_path(path)
+        File.exist?(full_path) ? load(File.new(full_path)) : new
+      end
+
       def load(io)
         new(YAML.load(io))
       end

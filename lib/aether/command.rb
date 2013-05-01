@@ -85,7 +85,7 @@ module Aether
     # Parse the command line options.
     #
     def parse_options!
-      @config = Config.load(File.new(File.expand_path(@options[:config])))
+      @config = Config.from_file(@options[:config])
       @options.merge!(@config.options_for(@name))
 
       @option_parser.parse!
