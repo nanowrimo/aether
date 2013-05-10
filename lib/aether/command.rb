@@ -85,8 +85,10 @@ module Aether
     # Parse the command line options.
     #
     def parse_options!
+      @sys_config = Config.from_file("/etc/aether/config.yml")
+
       @config = Config.from_file(@options[:config])
-      @options.merge!(@config.options_for(@name))
+      @options.merge!(@sys_config.options_for(@name).merge(@config.options_for(@name)))
 
       @option_parser.parse!
 

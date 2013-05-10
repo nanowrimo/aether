@@ -321,7 +321,7 @@ module Aether
       end
 
       def type
-        self.class.type || @options[:security_group]
+        (@info && @info.group) || self.class.type || @options[:security_group]
       end
 
       def upload_to_directory!(directory, files_and_modes = {})
