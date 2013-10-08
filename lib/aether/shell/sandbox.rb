@@ -54,6 +54,10 @@ module Aether
         `open #{urls.map(&:to_s).map(&:shellescape).join(' ')}`
       end
 
+      def snapshots
+        Snapshot.all
+      end
+
       # A shortcut to +Volume.find+.
       #
       def volume(id)

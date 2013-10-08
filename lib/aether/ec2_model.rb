@@ -16,6 +16,23 @@ module Aether
       @info[key]
     end
 
+    def name!(name_tag)
+      tag!(:Name => name_tag)
+    end
+
+    def tag!(tags)
+      connection.create_tags(:resource_id => id, :tag => tags.map { |(key,value)| { key.to_s => value } })
+      self
+    end
+
+    def tags
+      if @info && @info.tagSet
+        @info.tagSet.item.inject({}) { |tags,tag| tags[tag["key"]] = tag["value"]; tags }
+      else
+        {}
+      end
+    end
+
     protected
 
     def around_callback(event, *arguments, &blk)

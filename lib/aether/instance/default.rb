@@ -11,6 +11,14 @@ module Aether
       class << self
         attr_accessor :default_options, :type, :manage_dns
 
+        def default_options=(options)
+          if superclass.respond_to?(:default_options)
+            @default_options = superclass.default_options.merge(options)
+          else
+            @default_options = options
+          end
+        end
+
         def type
           @type || 'default'
         end
@@ -147,7 +155,7 @@ module Aether
 
         exit_statuses = options[:exit_statuses] + [0]
 
-        ssh do |session|
+        ssh(options[:ssh] || {}) do |session|
           output = commands.collect do |cmd|
             out = ""
             err = ""
@@ -199,9 +207,9 @@ module Aether
       def launch!
         raise StandardError.new("this instance has already been launched") if launched?
 
-        resolve_image or raise StandardError.new("failed to resolve proper AMI")
+        image_id = @options[:image_id] || resolve_image
 
-        parameters = {:image_id => @image.imageId,
+        parameters = {:image_id => image_id,
                       :instance_type => instance_type,
                       :security_group => security_group,
                       :availability_zone => availability_zone,
@@ -209,8 +217,11 @@ module Aether
 
         notify 'running new instance', parameters
 
+
         around_callback(:launch, parameters) do
-          @info = @connection.run_instances(parameters).instancesSet.item.first
+          around_callback(:run, parameters) do
+            @info = @connection.run_instances(parameters).instancesSet.item.first
+          end
         end
 
         self
@@ -280,7 +291,7 @@ module Aether
         @root_device ||= exec!("rdev").split(' ').first
       end
 
-      def ssh(user = nil, options = {}, &blk)
+      def ssh(options = {}, &blk)
         options = {
           :user => ssh_user,
           :keys => @connection.options[:ssh_keys]
@@ -294,6 +305,10 @@ module Aether
         true
       rescue Errno::ECONNREFUSED
         false
+      end
+
+      def ssh_user
+        @connection.options[:ssh_user] || 'root'
       end
 
       def state
@@ -352,6 +367,8 @@ module Aether
           sleep 3
           refresh!
         end
+
+        self
       end
 
       private
@@ -374,17 +391,17 @@ module Aether
       end
 
       def resolve_image
-        @image = @connection.images.select{ |image| runs_on?(image) }.reduce do |newest,image|
+        image = @connection.images.select{ |image| runs_on?(image) }.reduce do |newest,image|
           image.revision > newest.revision ? image : newest
         end
+
+        raise StandardError.new("failed to resolve AMI") unless image
+
+        image.imageId
       end
 
       def runs_on?(image)
         image_name == image.name && architecture == image.architecture
-      end
-
-      def ssh_user
-        @connection.options[:ssh_user] || 'root'
       end
     end
   end

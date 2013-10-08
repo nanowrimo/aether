@@ -17,6 +17,8 @@ module Aether
   autoload :MetaDisk, 'aether/meta_disk'
   autoload :Notifier, 'aether/notifier'
   autoload :OptionParser, 'aether/option_parser'
+  autoload :Snapshot, 'aether/snapshot'
+  autoload :SnapshotCollection, 'aether/snapshot_collection'
   autoload :Volume, 'aether/volume'
   autoload :VolumeCollection, 'aether/volume_collection'
   autoload :UserLibrary, 'aether/user_library'

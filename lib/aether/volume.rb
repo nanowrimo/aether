@@ -20,6 +20,13 @@ module Aether
       def device_names
         ('h'..'zz')
       end
+
+      # Finds the volume with the given id.
+      #
+      def find(id, connection = nil)
+        connection ||= Connection.latest
+        Volume.new { connection.describe_volumes(:volume_id => id).volumeSet.item.first }
+      end
     end
 
     def initialize(options = {})
@@ -34,7 +41,7 @@ module Aether
     end
 
     def attach_to!(instance)
-      raise AttachmentError unless for?(instance)
+      raise AttachmentError.new("volume isn't intended for instance #{instance}") unless for?(instance)
       attach!(:instance_id => instance.id, :device => device_for(instance))
     end
 
@@ -58,14 +65,21 @@ module Aether
     def create!
       raise StandardError.new("this volumes has already been created") if created?
 
-      # TODO
-      raise NotImplementedError
+      notify 'creating new volume', @options
+
+      around_callback(:create, @options) do
+        @info = @connection.create_volume(@options)
+      end
 
       self
     end
 
     def created?
       not @info.empty?
+    end
+
+    def created_at
+      @info['startTime'] && Time.parse(@info['startTime'])
     end
 
     def detach!(options = {})
@@ -132,8 +146,16 @@ module Aether
       tags['Name']
     end
 
+    def name_for(options = {})
+      name_parts.dup.tap do |parts|
+        [:instance_type, :mount, :position].each_with_index do |key,index|
+          parts[index] = options[key] if options.include?(key)
+        end
+      end.compact.join(":")
+    end
+
     def raid_member?
-      raid_position
+      !raid_position.nil?
     end
 
     def raid_position
@@ -151,14 +173,6 @@ module Aether
 
     def status
       @info['status']
-    end
-
-    def tags
-      if @info.tagSet
-        @info.tagSet.item.inject({}) { |tags,tag| tags[tag.key] = tag.value; tags }
-      else
-        {}
-      end
     end
 
     def to_s
@@ -181,6 +195,8 @@ module Aether
         sleep 3
         refresh!
       end
+
+      self
     end
 
     private
