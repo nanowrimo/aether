@@ -47,8 +47,8 @@ module Aether
           # TODO Clean this mess up
           device = volume_device('b')
           exec!(<<-end_exec)
-            if [ -b '#{device}' ] && cut -d ' ' -f 1 /proc/mounts | grep -q '#{device}'; then
-              mount '#{device}' /mnt
+            if [ -b '#{device}' ]; then
+              cut -d ' ' -f 1 /proc/mounts | grep -q '#{device}' || mount '#{device}' /mnt
             fi
           end_exec
         end
@@ -83,7 +83,7 @@ module Aether
         other.is_a?(::Aether::Instance::Default) && other.id == id
       end
 
-      [:key_name, :availability_zone, :architecture, :instance_type, :image_name].each do |attr|
+      [:key_name, :availability_zone, :architecture, :instance_type, :image_name, :block_device_mapping].each do |attr|
         class_eval <<-end_class_eval
           def #{attr}
             @#{attr} || @options[:#{attr}] || @connection.options[:#{attr}]
@@ -217,10 +217,10 @@ module Aether
                       :instance_type => instance_type,
                       :security_group => security_group,
                       :availability_zone => availability_zone,
-                      :key_name => key_name}
+                      :key_name => key_name,
+                      :block_device_mapping => block_device_mapping || []}
 
         notify 'running new instance', parameters
-
 
         around_callback(:launch, parameters) do
           around_callback(:run, parameters) do

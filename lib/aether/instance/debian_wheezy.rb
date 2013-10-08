@@ -11,7 +11,7 @@ module Aether
 
         authorize_root_login
         upgrade_packages
-        install_packages(:resolvconf)
+        install_packages(:resolvconf, :curl)
         configure_domain
 
         install_packages(:puppet) if @options[:configure_by] == :puppet
