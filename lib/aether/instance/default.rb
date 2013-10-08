@@ -46,7 +46,11 @@ module Aether
           # Make sure that /mnt is mounted
           # TODO Clean this mess up
           device = volume_device('b')
-          exec!("[ -b '#{device}' ] && cut -d ' ' -f 1 /proc/mounts | grep -q '#{device}' || mount #{device} /mnt")
+          exec!(<<-end_exec)
+            if [ -b '#{device}' ] && cut -d ' ' -f 1 /proc/mounts | grep -q '#{device}'; then
+              mount '#{device}' /mnt
+            fi
+          end_exec
         end
 
         # Create canonical DNS record
@@ -288,7 +292,7 @@ module Aether
       # Returns the block device path mounted at '/'.
       #
       def root_device
-        @root_device ||= exec!("rdev").split(' ').first
+        @root_device ||= exec!("readlink -f /dev/root")
       end
 
       def ssh(options = {}, &blk)

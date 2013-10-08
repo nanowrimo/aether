@@ -6,6 +6,8 @@ module Aether
       # allow login and copy all of admin's authorized ssh keys to root.
       #
       def authorize_root_login
+        notify "authorizing root login"
+
         exec!(<<-end_exec, :ssh => { :user => 'admin' })
           if sudo [ ! -f /root/.ssh/authorized_keys ]; then
             sudo mkdir /root/.ssh
@@ -24,16 +26,22 @@ module Aether
       end
 
       def install_packages(*packages)
+        notify "installing #{packages.join(" ")}"
+
         apt_get(:install, *packages)
       end
 
       def upgrade_packages
+        notify "upgrading packages"
+
         apt_get(:update)
         apt_get(:upgrade)
       end
 
       def configure_domain
         domain = @connection.dns.zone.name.gsub(/\.$/, '')
+
+        notify "setting domain to #{domain}"
 
         exec!(<<-end_exec)
           echo 'search #{domain}' >> /etc/resolvconf/resolv.conf.d/base

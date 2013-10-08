@@ -7,7 +7,7 @@ module Aether
       self.default_options = {:image_id => "ami-50d9a439"}
 
       after(:run) do
-        wait_for { |instance| instance.running? && instance.ssh?(:user => 'admin') }
+        wait_for { running? && ssh?(:user => 'admin') }
 
         authorize_root_login
         upgrade_packages
