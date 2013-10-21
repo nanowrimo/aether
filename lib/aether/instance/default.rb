@@ -270,7 +270,7 @@ module Aether
 
       def sftp(user = nil, options = {}, &blk)
         options = {:keys => @connection.options[:ssh_keys]}.merge(options)
-        Net::SFTP.start(dns_name, user || @connection.options[:ssh_user] || 'root', options, &blk)
+        Net::SFTP.start(ec2_dns_name, user || @connection.options[:ssh_user] || 'root', options, &blk)
       end
 
       # Returns an ssh URL to the instance.
