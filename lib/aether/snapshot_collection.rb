@@ -2,6 +2,7 @@ module Aether
   module SnapshotCollection
     def attach_to!(instance, options = {})
       each { |s| s.attach_to!(instance, options) }
+      self
     end
 
     def of(type)

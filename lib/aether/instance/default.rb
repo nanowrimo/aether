@@ -79,10 +79,6 @@ module Aether
         @info = yield if block_given?
       end
 
-      def ==(other)
-        other.is_a?(::Aether::Instance::Default) && other.id == id
-      end
-
       [:key_name, :availability_zone, :architecture, :instance_type, :image_name, :block_device_mapping].each do |attr|
         class_eval <<-end_class_eval
           def #{attr}

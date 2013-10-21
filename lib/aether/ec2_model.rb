@@ -8,6 +8,10 @@ module Aether
 
     attr_accessor :connection
 
+    def ==(other)
+      other.is_a?(Ec2Model) && !(other.id.nil? || id.nil?) && other.id == id
+    end
+
     def method_missing(method, *args)
       key = method.to_s.gsub(/_(.)/) { $1.upcase }
 

@@ -48,6 +48,10 @@ module Aether
       @info['description'] || ""
     end
 
+    def destroy
+      @connection.delete_snapshot(:snapshot_id => id)
+    end
+
     def id
       snapshot_id
     end
