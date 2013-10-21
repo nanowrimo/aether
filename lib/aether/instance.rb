@@ -1,27 +1,6 @@
 module Aether
   module Instance
-    autoload :Archive, 'aether/instance/archive'
-    autoload :Camp, 'aether/instance/camp'
-    autoload :DebianWheezy, 'aether/instance/debian_wheezy'
     autoload :Default, 'aether/instance/default'
-    autoload :Database, 'aether/instance/database'
-    autoload :DatabaseSlave, 'aether/instance/database_slave'
-    autoload :DevDatabase, 'aether/instance/dev_database'
-    autoload :DevFilaments, 'aether/instance/dev_filaments'
-    autoload :DevFilamentsSupport, 'aether/instance/dev_filaments_support'
-    autoload :DevWeb, 'aether/instance/dev_web'
-    autoload :Filaments, 'aether/instance/filaments'
-    autoload :FilamentsWorker, 'aether/instance/filaments_worker'
-    autoload :FilamentsProxy, 'aether/instance/filaments_proxy'
-    autoload :MockCamp, 'aether/instance/mock_camp'
-    autoload :MockCampSupport, 'aether/instance/mock_camp_support'
-    autoload :MockCampProxy, 'aether/instance/mock_camp_proxy'
-    autoload :MockDatabase, 'aether/instance/mock_database'
-    autoload :Store, 'aether/instance/store'
-    autoload :StoreWorker, 'aether/instance/store_worker'
-    autoload :Stressor, 'aether/instance/stressor'
-    autoload :Util, 'aether/instance/util'
-    autoload :Web, 'aether/instance/web'
 
     class UnlaunchedInstanceError < StandardError; end
 
@@ -54,21 +33,13 @@ module Aether
       # Instantiates an instance of the given type.
       #
       def new(type = nil, connection = nil, &blk)
-        klass = type && classify(type)
-
-        instance = if klass && self.const_defined?(klass) && (klass = self.const_get(klass))
-          if klass.ancestors.include?(Default)
-            klass.new(&blk)
-          else
-            Default.new(&blk)
-          end
-        else
-          Default.new(&blk)
+        begin
+          klass = require_user(:instance, type)
+        rescue NameError, LoadError
+          klass = Default
         end
 
-        instance.connection = connection || Connection.latest
-
-        instance
+        klass.new(&blk).tap { |instance| instance.connection = connection || Connection.latest }
       end
 
       # Instantiates an instance of the given type and runs it.

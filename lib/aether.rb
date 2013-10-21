@@ -32,5 +32,5 @@ module Aether
     attr_accessor :user_load_path
   end
 
-  self.user_load_path = File.expand_path("~/.aether")
+  self.user_load_path = File.expand_path("~/.aether/lib")
 end
