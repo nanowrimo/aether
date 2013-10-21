@@ -9,7 +9,7 @@ module Aether
     end
 
     def load_path(*names)
-      File.join(Aether.user_load_path, *names.map(&:to_s))
+      File.join(Aether.user_load_path, *names.map { |name| name.to_s.gsub('-', '_') })
     end
 
     def require_user(*names)
