@@ -3,7 +3,7 @@ module Aether
     # Returns only the runs where all snapshots are completed.
     #
     def completed
-      select { |snapshots| snapshots.all?(&:completed?) }
+      where { all?(&:completed?) }
     end
 
     # Partitions the array of snapshot runs for pruning all but the given
@@ -62,6 +62,13 @@ module Aether
       keep.fill(keep.last, keep.length...tiers)
 
       completed.partition_into(tiers).map.with_index { |tier,i| tier.keep(keep[i]).last }.flatten(1)
+    end
+
+    # Returns snapshot runs that match the given block (it returns true when
+    # instance evaluated).
+    #
+    def where(&blk)
+      select { |run| run.instance_exec(&blk) }.extend(SnapshotRunCollection)
     end
 
     private
