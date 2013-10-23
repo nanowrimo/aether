@@ -21,11 +21,11 @@ module Aether
     def classify(host)
       notify "classifying host", host
 
-      normal_host = normalize_host(host)
+      address = Resolv.getaddress(host)
 
-      notify "normalized host", normal_host
-
-      instance = @connection.instances[normal_host]
+      instance = @connection.instances.values.find do |instance|
+        instance.privateIpAddress == address || instance.ipAddress == address
+      end
 
       notify(*(instance ? ["found instance", instance.instanceId] : ["no instance found"]))
 
@@ -62,14 +62,6 @@ module Aether
       classification['parameters'] = parameters
 
       classification
-    end
-
-    # Does a forward, then reverse, DNS lookup on the host.
-    #
-    def normalize_host(host)
-      Resolv.getname(Resolv.getaddress(host))
-    rescue Resolv::ResolvError => e
-      raise e, "failed to resolve host `#{host}'"
     end
 
     # Serializes the given instance as output suitable for puppet.
