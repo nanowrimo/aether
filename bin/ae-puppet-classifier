@@ -1,7 +1,11 @@
-#!/usr/bin/env ruby
+#!/bin/sh
 #
 # Classifies Puppet nodes based on the security group they're running in.
 #
+
+. "$(dirname $0)/../lib/aether/ruby"
+exec "$(find_ruby)" -x "$0" "$@"
+#!ruby
 
 $:.unshift(File.join(File.dirname(File.dirname(__FILE__)), 'lib'))
 

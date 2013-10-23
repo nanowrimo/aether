@@ -1,0 +1,7 @@
+find_ruby() {
+  if ruby -e 'exit RUBY_VERSION.to_f > 1.8'; then
+    echo ruby
+  else
+    which ruby1.9 || which ruby1.9.1 || echo ruby
+  fi
+}
