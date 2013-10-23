@@ -1,6 +1,7 @@
 require 'aether/command'
 
 require 'yaml'
+require 'resolv'
 
 module Aether
 
@@ -66,8 +67,8 @@ module Aether
     # Does a forward, then reverse, DNS lookup on the host.
     #
     def normalize_host(host)
-      Socket.getaddrinfo(host, nil, Socket::AF_INET).first[2]
-    rescue SocketError => e
+      Resolv.getname(Resolv.getaddress(host))
+    rescue Resolv::ResolvError => e
       raise e, "failed to resolve host `#{host}'"
     end
 
