@@ -5,6 +5,10 @@ module Aether
       self
     end
 
+    def completed
+      where { completed? }
+    end
+
     def of(type)
       where { run_type == type }
     end

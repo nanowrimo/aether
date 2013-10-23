@@ -30,7 +30,7 @@ module Aether
         connection ||= Connection.latest
         {
           :tiers => connection.options[:snapshot_retention_tiers] || 3,
-          :keep => connection.options[:snapshot_rentention_keep] || 10
+          :keep => connection.options[:snapshot_retention_keep] || 30
         }
       end
     end
@@ -44,6 +44,10 @@ module Aether
       create_volume_for({:instance_type => instance.type}.merge(options)).wait_for(&:available?).tap do |volume|
         volume.attach_to!(instance)
       end
+    end
+
+    def completed?
+      status == 'completed'
     end
 
     def created?

@@ -1,5 +1,11 @@
 module Aether
   module SnapshotRunCollection
+    # Returns only the runs where all snapshots are completed.
+    #
+    def completed
+      select { |snapshots| snapshots.all?(&:completed?) }
+    end
+
     # Partitions the array of snapshot runs for pruning all but the given
     # number. Those to keep are selected evenly from across the collection and
     # returned in the first array. Those to destroy are returned as the second
@@ -30,11 +36,17 @@ module Aether
     #   (1..15).partition_into(3) # => [[1, 2, 3, 4, 5, 6, 7, 8, 9, 10], [11, 12, 13], [14, 15]]
     #   (1..10).partition_into(2, 1 / 2.to_f) #=> [[1, 2, 3, 4, 5], [6, 7, 8, 9, 10]]
     #
-    def partition_into(tiers, ratio = nil)
+    def partition_into(tiers, ratio = nil, total = nil)
       ratio ||= 1 / tiers.to_f
       recursively_partition(self, tiers) { |i,len| i < (len - (len * ratio).ceil) }.map do |runs|
         runs.extend(SnapshotRunCollection)
       end
+    end
+
+    # Flattens the runs into an array of snapshots.
+    #
+    def snapshots
+      flatten(1)
     end
 
     # Returns snapshots that are scheduled for removal according to the
@@ -42,7 +54,14 @@ module Aether
     #
     def stale(options = {})
       options = Snapshot.retention_options.merge(options)
-      partition_into(options[:tiers]).map { |runs| runs.keep(options[:keep]).last }.flatten(1)
+
+      tiers = options[:tiers].to_i
+
+      # Make sure we have enough keep policies to cover the number of tiers
+      keep = Array(options[:keep]).map(&:to_i)
+      keep.fill(keep.last, keep.length...tiers)
+
+      completed.partition_into(tiers).map.with_index { |tier,i| tier.keep(keep[i]).last }.flatten(1)
     end
 
     private
