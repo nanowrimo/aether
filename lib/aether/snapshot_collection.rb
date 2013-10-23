@@ -19,7 +19,7 @@ module Aether
     # Returns snapshots in groups of runs.
     #
     def runs
-      group_by(&:run_id).map { |id,snapshots| snapshots.extend(SnapshotCollection) }
+      group_by(&:run_id).map { |id,snapshots| snapshots.extend(SnapshotCollection) }.extend(SnapshotRunCollection)
     end
   end
 end

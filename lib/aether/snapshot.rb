@@ -23,6 +23,16 @@ module Aether
         connection ||= Connection.latest
         Snapshot.new { connection.describe_snapshots(:owner => "self", :snapshot_id => id).snapshotSet.item.first }
       end
+
+      # Returns the configured snapshot retention options.
+      #
+      def retention_options(connection = nil)
+        connection ||= Connection.latest
+        {
+          :tiers => connection.options[:snapshot_retention_tiers] || 3,
+          :keep => connection.options[:snapshot_rentention_keep] || 10
+        }
+      end
     end
 
     def initialize(options = {})
