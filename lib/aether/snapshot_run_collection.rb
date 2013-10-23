@@ -61,7 +61,8 @@ module Aether
       keep = Array(options[:keep]).map(&:to_i)
       keep.fill(keep.last, keep.length...tiers)
 
-      completed.partition_into(tiers).map.with_index { |tier,i| tier.keep(keep[i]).last }.flatten(1)
+      completed.partition_into(tiers).map.with_index { |tier,i| tier.keep(keep[i]).last }.flatten(1).
+        extend(SnapshotRunCollection)
     end
 
     # Returns snapshot runs that match the given block (it returns true when
