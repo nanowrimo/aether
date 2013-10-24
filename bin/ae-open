@@ -1,0 +1,14 @@
+#!/bin/sh
+#
+# Opens all instances running in the given group.
+#
+
+. "$(dirname $0)/../lib/aether/ruby"
+exec "$(find_ruby)" -x "$0" "$@"
+#!ruby
+
+$:.unshift(File.join(File.dirname(File.dirname(__FILE__)), 'lib'))
+
+require 'aether'
+
+ARGV.each { |group| Aether::Shell.new.run(:evaluate, "open running.in('#{group}')") }
