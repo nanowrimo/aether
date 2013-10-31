@@ -11,4 +11,4 @@ $:.unshift(File.join(File.dirname(File.dirname(__FILE__)), 'lib'))
 
 require 'aether'
 
-puts Aether::Shell.new.run(:evaluate, ARGV)
+Aether::Shell.new.run(:evaluate, ARGV).to_s.split("\n").each { |line| puts(line) }
