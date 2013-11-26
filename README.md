@@ -16,9 +16,11 @@ infrastructure. It has since been released under the GPL.
 
 For now, there's a Makefile, but a gem is in the works.
 
-    git clone git@github.com:marxarelli/aether.git
-    cd aether
-    sudo make install
+```shell
+git clone git@github.com:marxarelli/aether.git
+cd aether
+sudo make install
+```
 
 The Makefile will install everything under `/usr/local/lib/aether` with links
 to commands in `/usr/local/bin`.
@@ -27,23 +29,27 @@ to commands in `/usr/local/bin`.
 
 By default, Aether looks for its configuration at `~/.aether/config.yml`.
 
-    default:
-      access_key: ~/.ec2/access.key
-      secret_key: ~/.ec2/secret.key
-      ssh_keys: [~/.ec2/dduvall.pem]
-      key_name: dduvall
+```yaml
+default:
+  access_key: ~/.ec2/access.key
+  secret_key: ~/.ec2/secret.key
+  ssh_keys: [~/.ec2/dduvall.pem]
+  key_name: dduvall
+```
 
 As you can see, default options are given under `default:`. You can also
 limit options to only specific commands.
 
-    default:
-      access_key: ~/.ec2/access.key
-      secret_key: ~/.ec2/secret.key
-      ssh_keys: [~/.ec2/admin.pem]
-      key_name: dduvall
-    shell:
-      access_key: ~/.ec2/my-access.key
-      secret_key: ~/.ec2/my-secret.key
+```yaml
+default:
+  access_key: ~/.ec2/access.key
+  secret_key: ~/.ec2/secret.key
+  ssh_keys: [~/.ec2/admin.pem]
+  key_name: dduvall
+shell:
+  access_key: ~/.ec2/my-access.key
+  secret_key: ~/.ec2/my-secret.key
+```
 
 Each config entry corresponds to a command-line-parameter equivalent, so you
 can always override these when executing a command.
@@ -144,81 +150,87 @@ infrastructure!
 You could, for example, write a base profile for all of your Debian systems
 that bootstraps the base Debian AMI to a point where Puppet can take over.
 
-    class DebianWheezy < Aether::Instance::Default
-      include InstanceHelpers::Debian
+```ruby
+class DebianWheezy < Aether::Instance::Default
+  include InstanceHelpers::Debian
 
-      self.type = "default"
-      self.default_options = { :image_id => "ami-50d9a439" }
+  self.type = "default"
+  self.default_options = { :image_id => "ami-50d9a439" }
 
-      after(:run) do
-        wait_for { running? && ssh?(:user => 'admin') }
+  after(:run) do
+    wait_for { running? && ssh?(:user => 'admin') }
 
-        authorize_root_login
-        upgrade_packages
-        install_packages(:resolvconf, :curl)
-        configure_domain
+    authorize_root_login
+    upgrade_packages
+    install_packages(:resolvconf, :curl)
+    configure_domain
 
-        install_packages(:puppet) if @options[:configure_by] == :puppet
-      end
-    end
+    install_packages(:puppet) if @options[:configure_by] == :puppet
+  end
+end
+```
 
 And maybe you'd like to extend this profile for a more specific use case.
 
-    Aether::Instance.require_user(:instance, 'debian_wheezy')
+```ruby
+Aether::Instance.require_user(:instance, 'debian_wheezy')
 
-    class VarnishProxy < DebianWheezy
-      self.default_options = {
-        :instance_type => "c1.medium", :promote_by => :dns_alias,
-        :block_device_mapping => [ { :device_name => '/dev/sdb', :virtual_name => 'ephemeral0' } ]
-      }
+class VarnishProxy < DebianWheezy
+  self.default_options = {
+    :instance_type => "c1.medium", :promote_by => :dns_alias,
+    :block_device_mapping => [ { :device_name => '/dev/sdb', :virtual_name => 'ephemeral0' } ]
+  }
 
-      after(:launch) do
-        wait_for { running? && ssh? }
-        upload_ssl_certificate
-      end
+  after(:launch) do
+    wait_for { running? && ssh? }
+    upload_ssl_certificate
+  end
 
-      # ...
-    end
+  # ...
+end
+```
 
 To illustrate the extent of Aether's power, consider the following profile of
 a scalable database instance we used in the early days of AWS, before RDS
 existed.
 
-    class Database < Aether::Instance::Default
-      include InstanceHelpers::MetaDisk
+```ruby
+class Database < Aether::Instance::Default
+  include InstanceHelpers::MetaDisk
 
-      self.type = "database"
-      self.default_options = {
-        :elastic_ip => "",
-        :instance_type => "m2.4xlarge",
-        :image_name => "database-master",
-        :availability_zone => "us-east-1b",
-        :promote_by => :elastic_ip,
-        :configure_by => nil
-      }
+  self.type = "database"
+  self.default_options = {
+    :elastic_ip => "",
+    :instance_type => "m2.4xlarge",
+    :image_name => "database-master",
+    :availability_zone => "us-east-1b",
+    :promote_by => :elastic_ip,
+    :configure_by => nil
+  }
 
-      before(:demotion) do
-        exec!("invoke-rc.d mysql stop", "umount /var/lib/mysql", "umount /mnt/mysqld")
-        meta_disk_devices.each(&:disassemble!)
-        attached_volumes.each(&:detach!)
-      end
+  before(:demotion) do
+    exec!("invoke-rc.d mysql stop", "umount /var/lib/mysql", "umount /mnt/mysqld")
+    meta_disk_devices.each(&:disassemble!)
+    attached_volumes.each(&:detach!)
+  end
 
-      after(:promotion) do
-        volumes.wait_for { |volume| volume.available? }
-        attach_volumes!
-        volumes.wait_for { |volume| volume.attached? && file_exists?(volume.device) }
+  after(:promotion) do
+    volumes.wait_for { |volume| volume.available? }
+    attach_volumes!
+    volumes.wait_for { |volume| volume.attached? && file_exists?(volume.device) }
 
-        meta_disk_devices.each(&:assemble!)
-        meta_disk_devices.each { |md| md.check(:xfs) }
+    meta_disk_devices.each(&:assemble!)
+    meta_disk_devices.each { |md| md.check(:xfs) }
 
-        exec!("ln -nfs #{mysql_sized_config_path} /etc/mysql/my-sized.cnf")
-        exec!("mount /var/lib/mysql", "mount /mnt/mysqld", "invoke-rc.d mysql start")
-      end
+    exec!("ln -nfs #{mysql_sized_config_path} /etc/mysql/my-sized.cnf")
+    exec!("mount /var/lib/mysql", "mount /mnt/mysqld", "invoke-rc.d mysql start")
+  end
 
-      def mysql_sized_config_path
-        "/etc/mysql/my-#{info.instanceType.sub(/^[^\.]+\./, '')}.cnf"
-      end
-    end
+  def mysql_sized_config_path
+    "/etc/mysql/my-#{info.instanceType.sub(/^[^\.]+\./, '')}.cnf"
+  end
+end
+```
 
 #### Using Profiles in the Shell
 
