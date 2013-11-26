@@ -1,15 +1,16 @@
 # Aether
 
-Aether project contains tools for management of AWS infrastructure, most
-notably the Aether Ruby shell (`ae-shell`). It's intended mainly for querying,
+Aether contains tools for management of AWS infrastructure, most notably the
+Aether Ruby shell (`ae-shell`). It's intended mainly for querying,
 provisioning, and shutdown of "machine" resources, not OS- and
 application-level configuration which is better left to tools like
-[Puppet](http://puppetlabs.com/). (It does, however, include helpers for
-invoking Puppet configuration on demand!)
+[Puppet](http://puppetlabs.com/). It does, however, include helpers for remote
+execution of shell commands to help with bootstrapping, and for Puppet
+configuration as well.
 
 This gem was initially developed by [National Novel Writing
 Month](http://nanowrimo.org) for use in managing its AWS-backed website
-infrastructure its event website. It has since been released under the GPL.
+infrastructure. It has since been released under the GPL.
 
 ## Installation
 
@@ -20,7 +21,7 @@ For now, there's a Makefile, but a gem is in the works.
     sudo make install
 
 The Makefile will install everything under `/usr/local/lib/aether` with links
-to scripts in `/usr/local/bin`.
+to commands in `/usr/local/bin`.
 
 ## Configuration
 
@@ -94,7 +95,7 @@ and `Volume`, or commonly used methods like `Instance.all`.
 
 In fact, `Instance.all` is so commonly used to query for instance resources
 that any instance method of `InstanceCollection` called directly in the shell
-is inferred to be a call to `Instance.all`, letting you simply say:
+is inferred to be a call on `Instance.all`, letting you simply say:
 
     >> running.in("web")
     => [#<ins:web:i-7de33615:running>, #<ins:web:i-ae85ebce:running>, ...]
@@ -119,7 +120,7 @@ And, again, because this is just Ruby (and because this documentation needs a
 lot of work), investigate the objects to see what you can do! (Take a look at
 `Aether::Shell::Sandbox` for the implementation of shell helpers.)
 
-    >> throw_money_at_it = 20.times.collect { new }
+    >> throw_money_at_it = 20.times.collect { Instance.new }
     => [#<ins:default:(new)>, #<ins:default:(new)>, ...]
     >> throw_money_at_it.each(&:launch!)
 
@@ -131,8 +132,8 @@ Profiles for instance resources can be defined in the User Library under
 `~/.aether/lib/instance`. An instance profile is simply a Ruby class that
 extends `Aether::Instance::Default`.
 
->> Wait, the shell is just a Ruby shell? Profiles are just Ruby classes? In
->> the wrong hands...
+> Wait, the shell is just a Ruby shell? Profiles are just Ruby classes? In
+> the wrong hands...
 
 Yes, well, in the right hands—and with the right IAM restrictions in
 place—these are powerful and safe constructs for managing your AWS
@@ -215,9 +216,9 @@ plans to make this profile mapping more flexible.
 Similarly, when you instantiate a new instance resource, the given name is
 mapped to an existing profile.
 
-    >> more_webs = 3.times.collect { new("web") }
+    >> can_haz_more_webs = 3.times.collect { new("web") }
     => [#<ins:web:(new)>, #<ins:web:(new)>, #<ins:web:(new)>]
-    >> more_webs.first.class
+    >> can_haz_more_webs.first.class
     => Web
 
 ## Roadmap
