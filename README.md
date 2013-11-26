@@ -162,6 +162,24 @@ that bootstraps the base Debian AMI to a point where Puppet can take over.
       end
     end
 
+And maybe you'd like to extend this profile for a more specific use case.
+
+    Aether::Instance.require_user(:instance, 'debian_wheezy')
+
+    class VarnishProxy < DebianWheezy
+      self.default_options = {
+        :instance_type => "c1.medium", :promote_by => :dns_alias,
+        :block_device_mapping => [ { :device_name => '/dev/sdb', :virtual_name => 'ephemeral0' } ]
+      }
+
+      after(:launch) do
+        wait_for { running? && ssh? }
+        upload_ssl_certificate
+      end
+
+      # ...
+    end
+
 To illustrate the extent of Aether's power, consider the following profile of
 a scalable database instance we used in the early days of AWS, before RDS
 existed.
