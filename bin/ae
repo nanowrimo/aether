@@ -11,4 +11,10 @@ $:.unshift(File.join(File.dirname(File.dirname(__FILE__)), 'lib'))
 
 require 'aether'
 
-Aether::Shell.new.run(:evaluate, ARGV).to_s.split("\n").each { |line| puts(line) }
+result = Aether::Shell.new.run(:evaluate, ARGV)
+
+if result.is_a?(Enumerable)
+  result.each { |line| puts(line) }
+else
+  puts result
+end
