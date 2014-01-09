@@ -303,7 +303,7 @@ module Aether
       def ssh?(*arguments)
         ssh(*arguments) { }
         true
-      rescue Errno::ECONNREFUSED
+      rescue Errno::ECONNREFUSED, Errno::ETIMEDOUT
         false
       end
 
