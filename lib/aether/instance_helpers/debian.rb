@@ -8,13 +8,16 @@ module Aether
       def authorize_root_login
         notify "authorizing root login"
 
+        root_ssh_dir = "/root/.ssh"
+        root_ssh_keys = "#{root_ssh_dir}/authorized_keys"
+
         exec!(<<-end_exec, :ssh => { :user => 'admin' })
-          if sudo [ ! -f /root/.ssh/authorized_keys ]; then
-            sudo mkdir /root/.ssh
-            sudo cp .ssh/authorized_keys /root/.ssh/authorized_keys
-            sudo chown root:root -R /root/.ssh
-            sudo chmod 700 /root/.ssh
-            sudo chmod 600 /root/.ssh/authorized_keys
+          if sudo [ ! -f #{root_ssh_keys} ] || sudo grep -q 'Please login as the user' #{root_ssh_keys}; then
+            sudo mkdir -p #{root_ssh_dir}
+            sudo cp .ssh/authorized_keys #{root_ssh_keys}
+            sudo chown root:root -R #{root_ssh_dir}
+            sudo chmod 700 #{root_ssh_dir}
+            sudo chmod 600 #{root_ssh_keys}
             sudo sed -i.aether.bak 's/^PermitRootLogin no$/PermitRootLogin yes/' /etc/ssh/sshd_config
             sudo invoke-rc.d ssh reload
           fi
