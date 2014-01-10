@@ -12,6 +12,10 @@ module Aether
       File.join(Aether.user_load_path, *names.map { |name| name.to_s.gsub('-', '_') })
     end
 
+    def user_file(*names)
+      File.new(load_path(*names))
+    end
+
     def require_user(*names)
       require load_path(*names)
       constantize(classify(names.last))

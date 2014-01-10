@@ -58,7 +58,7 @@ module Aether
           wait_for { |instance| instance.running? }
 
           begin
-            @dns_alias = create_dns_alias(name)
+            create_dns_alias(name) unless @dns_alias
           rescue StandardError => e
             notify 'FAILED to create new DNS record', e
           end
@@ -79,10 +79,11 @@ module Aether
         @info = yield if block_given?
       end
 
-      [:key_name, :availability_zone, :architecture, :instance_type, :image_name, :block_device_mapping].each do |attr|
+      [:key_name, :availability_zone, :architecture, :instance_type, :image_name, :block_device_mapping, :user_data].each do |attr|
         class_eval <<-end_class_eval
           def #{attr}
-            @#{attr} || @options[:#{attr}] || @connection.options[:#{attr}]
+            value = @#{attr} || @options[:#{attr}] || @connection.options[:#{attr}]
+            value.is_a?(Proc) ? value.call(self) : value
           end
         end_class_eval
       end
@@ -113,7 +114,7 @@ module Aether
 
         notify 'creating new DNS alias', name, ttl, @info.dnsName
 
-        @connection.dns.create_alias(name, @info.dnsName, ttl)
+        @dns_alias = @connection.dns.create_alias(name, @info.dnsName, ttl)
       end
 
       def demote!(new_leader = nil)
@@ -192,6 +193,16 @@ module Aether
         output
       end
 
+      # Returns whether the given command executed successfully
+      #
+      def exec?(comamnd, &block)
+        exec!(command, &block)
+      rescue RemoteExecutionError => e
+        false
+      else
+        true
+      end
+
       def id
         instance_id
       end
@@ -214,9 +225,10 @@ module Aether
                       :security_group => security_group,
                       :availability_zone => availability_zone,
                       :key_name => key_name,
+                      :user_data => user_data,
                       :block_device_mapping => block_device_mapping || []}
 
-        notify 'running new instance', parameters
+        notify 'running new instance', parameters.reject { |name,_| name == :user_data }
 
         around_callback(:launch, parameters) do
           around_callback(:run, parameters) do
@@ -359,8 +371,8 @@ module Aether
         Volume.all(connection).for(self)
       end
 
-      def wait_for
-        notify "waiting on instance #{id}"
+      def wait_for(explanation = nil)
+        notify "waiting on instance #{id}#{explanation && " for #{explanation}"}"
 
         until yield self
           notify '...'
