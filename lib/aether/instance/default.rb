@@ -9,7 +9,7 @@ module Aether
       extend Observable
 
       class << self
-        attr_accessor :default_options, :type, :manage_dns
+        attr_accessor :type, :manage_dns
 
         def default_options=(options)
           if superclass.respond_to?(:default_options)
@@ -17,6 +17,10 @@ module Aether
           else
             @default_options = options
           end
+        end
+
+        def default_options
+          @default_options || superclass.default_options
         end
 
         def type
