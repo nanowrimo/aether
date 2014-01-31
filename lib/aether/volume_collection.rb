@@ -6,6 +6,10 @@ module Aether
       where { attached_to?(instance_id) }
     end
 
+    def not_attached_to(instance_id)
+      where { !attached_to?(instance_id) }
+    end
+
     # Returns volumes that are available.
     #
     def available
@@ -32,8 +36,8 @@ module Aether
 
     # Waits for all volumes in the collection.
     #
-    def wait_for(&blk)
-      each { |volume| volume.wait_for(&blk) }
+    def wait_for(*arguments, &blk)
+      each { |volume| volume.wait_for(*arguments, &blk) }
     end
 
     # Returns volumes that match the given block (it returns true when

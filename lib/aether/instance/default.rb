@@ -30,19 +30,13 @@ module Aether
 
       self.default_options = {}
 
+      after(:run) do
+        tag!(:Name => name, :Role => type)
+      end
+
       after(:launch) do
         if @options[:configure_by] == :puppet
-          wait_for { |instance| instance.running? && instance.ssh? }
-
-          # Upload our SSH key-sharer key to newly launched instances
-          ssh_key = File.expand_path("~/.aether/ssh_key_sharer")
-          ssh_pub_key = "#{ssh_key}.pub"
-
-          if File.exists?(ssh_key)
-            notify 'uploading SSH key-sharer key'
-
-            upload_to_directory!("/var/lib/puppet", ssh_key => 0400, ssh_pub_key => 0640)
-          end
+          wait_for { running? && ssh? }
 
           # Prepend PATH environment variable with the Ruby gems binary path
           exec!("echo 'PATH=\"/var/lib/gems/1.8/bin:'\"$PATH\"'\"' >> /etc/environment")
@@ -78,7 +72,7 @@ module Aether
           :architecture => 'x86_64',
           :promote_by => :null,
           :configure_by => :puppet
-        }.merge(self.class.default_options)
+        }.merge(self.class.default_options).merge(options)
 
         @info = yield if block_given?
       end
@@ -104,8 +98,10 @@ module Aether
         volumes.each { |volume| volume.attach_to!(self) }
       end
 
+      # Attached volumes, excluding any root volume.
+      #
       def attached_volumes
-        Volume.all(connection).attached_to(self)
+        Volume.all(connection).attached_to(self).where { device != "/dev/sda" }
       end
 
       def configure!(*args)
@@ -113,12 +109,19 @@ module Aether
         around_callback(:configure) { configurator.configure!(*args) }
       end
 
-      def create_dns_alias(name, ttl = nil)
+      def create_dns_alias(dns_name = nil, ttl = nil)
         assert_launched
+        dns_name ||= name
 
-        notify 'creating new DNS alias', name, ttl, @info.dnsName
+        if dns_alias = @connection.dns.zone.aliases(dns_name).first
+          notify 'updating existing DNS alias', dns_name, ttl, @info.dnsName
+          dns_alias.update(:values => [ @info.dnsName ])
+        else
+          notify 'creating new DNS alias', dns_name, ttl, @info.dnsName
+          dns_alias = @connection.dns.zone.create_alias(dns_name, @info.dnsName, ttl)
+        end
 
-        @dns_alias = @connection.dns.create_alias(name, @info.dnsName, ttl)
+        @dns_alias = dns_alias
       end
 
       def demote!(new_leader = nil)
@@ -140,7 +143,7 @@ module Aether
 
       def dns_alias
         return nil unless manage_dns?
-        @dns_alias ||= @connection.dns.aliases(name).first
+        @dns_alias ||= @connection.dns.zone.aliases(name).first
       end
 
       def dns_name
@@ -263,6 +266,12 @@ module Aether
 
       def promote!
         around_callback(:promotion) { promoter.promote! }
+      end
+
+      def public_ip_address
+        assert_launched
+
+        @info.ipAddress
       end
 
       def reboot!(options = {})

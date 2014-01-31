@@ -32,14 +32,18 @@ module Aether
 
       # Instantiates an instance of the given type.
       #
-      def new(type = nil, connection = nil, &blk)
+      def new(*arguments, &blk)
+        options = (i = arguments.index { |arg| arg.is_a?(Hash) }) ? arguments.delete_at(i) : {}
+
+        type, connection = *arguments
+
         begin
           klass = require_user(:instance, type)
         rescue NameError, LoadError
           klass = Default
         end
 
-        klass.new(&blk).tap { |instance| instance.connection = connection || Connection.latest }
+        klass.new(options, &blk).tap { |instance| instance.connection = connection || Connection.latest }
       end
 
       # Instantiates an instance of the given type and runs it.

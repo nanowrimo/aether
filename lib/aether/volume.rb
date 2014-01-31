@@ -187,8 +187,8 @@ module Aether
       end
     end
 
-    def wait_for
-      notify "waiting on volume #{id}"
+    def wait_for(explanation = nil)
+      notify "waiting on volume #{id}#{explanation && " for #{explanation}"}"
 
       until yield self
         notify '...'

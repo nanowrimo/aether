@@ -37,6 +37,11 @@ module Aether
       end
     end
 
+    def untag!(*tags)
+      connection.delete_tags(:resource_id => id, :tag => tags.map { |tag| { tag.to_s => nil } })
+      self
+    end
+
     protected
 
     def around_callback(event, *arguments, &blk)
