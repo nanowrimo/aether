@@ -18,51 +18,87 @@ module Aether
       self.zone = @options[:dns_zone] unless @options[:skip_dns]
     end
 
-    # Creates and returns a new DNS record.
+    # Attempts to find a zone with the given name for the current DNS
+    # connection. A `DnsError` is raised if none is found.
     #
-    def create(name, type, ttl, values)
-      name = qualify(name)
-      record = DnsRecord.new(name, type, ttl, values, @zone)
-      record.create("Created #{Time.now} by aether.")
-      record
+    def find_zone(name)
+      zones.find { |zone| zone.named?(name) } or raise DnsError.new("zone #{name} does not exist")
     end
 
-    # Creates a new CNAME record using the given or default TTL.
-    #
-    def create_alias(alias_name, canonical_name, ttl = nil)
-      create(alias_name, 'CNAME', ttl || @options[:dns_ttl], [canonical_name])
+    def zone=(name)
+      @zone = find_zone(name)
     end
 
-    # Finds all CNAME records for the given name.
-    #
-    def aliases(alias_name)
-      alias_name = qualify(alias_name)
-      where { type == 'CNAME' && name == alias_name }
+    def zones
+      @zones ||= @r53.get_zones.map { |z| Zone.new(@r53, z, @options) }
     end
 
-    # Fully qualifies the given name, if it isn't already, using the DNS zone.
-    #
-    def qualify(name)
-      name += ".#{@zone.name}" unless name.end_with?('.')
-    end
+    class Zone
+      def initialize(connection, zone, options = {})
+        @r53 = connection
+        @zone = zone
+        @options = options
+      end
 
-    # Returns all records in the DNS zone.
-    #
-    def records
-      @zone.get_records.map { |record| record.extend(DnsRecordAdditions) }
-    end
+      # Creates and returns a new DNS record.
+      #
+      def create(name, type, ttl, values)
+        name = qualify(name)
+        record = DnsRecord.new(name, type, ttl, values, @zone)
+        record.create("Created #{Time.now} by aether.")
+        record
+      end
 
-    # Returns all records from the current DNS zone that match the given
-    # block.
-    #
-    def where(&blk)
-      records.select { |record| record.instance_exec(&blk) }
-    end
+      # Creates a new CNAME record using the given or default TTL.
+      #
+      def create_alias(alias_name, canonical_name, ttl = nil)
+        create(alias_name, 'CNAME', ttl || @options[:dns_ttl], [canonical_name])
+      end
 
-    def zone=(zone)
-      zone += "." unless zone.end_with?(".")
-      @zone = @r53.get_zones.detect { |z| z.name == zone }
-      raise DnsError.new("zone #{zone} does not exist") unless @zone
+      # Finds all CNAME records for the given name.
+      #
+      def aliases(alias_name)
+        alias_name = qualify(alias_name)
+        where { type == 'CNAME' && name == alias_name }
+      end
+
+      # Returns the name of the zone.
+      #
+      def name
+        @zone.name
+      end
+
+      # Whether the given name matches the zone name, regardless of any
+      # terminating root zone '.'. 
+      #
+      def named?(zone_name)
+        (zone_name.end_with?('.') ? zone_name : "#{zone_name}.") == name
+      end
+
+      # Fully qualifies the given name, if it isn't already, using the DNS zone.
+      #
+      def qualify(host)
+        host.end_with?('.') ? host : "#{host}.#{name}"
+      end
+
+      # Returns all records in the DNS zone.
+      #
+      def records
+        @zone.get_records.map { |record| record.extend(DnsRecordAdditions) }
+      end
+
+      # Returns the root A record.
+      #
+      def root
+        records.find { |record| record.name == name && record.type == 'A' }
+      end
+
+      # Returns all records from the current DNS zone that match the given
+      # block.
+      #
+      def where(&blk)
+        records.select { |record| record.instance_exec(&blk) }
+      end
     end
   end
 
@@ -71,6 +107,10 @@ module Aether
   module DnsRecordAdditions
     def inspect
       "#<dns:#{name}:#{type}:#{ttl}:#{values.join(',')}>"
+    end
+
+    def named?(record_name)
+      (record_name.end_with?('.') ? record_name : "#{record_name}.") == name
     end
 
     def update(params = {})

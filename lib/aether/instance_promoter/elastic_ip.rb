@@ -23,13 +23,15 @@ module Aether
       def promote!
         leader = leader_instance
 
+        public_ip = elastic.publicIp
+
         unless instance == leader
           leader.demote!(instance) if leader
-          public_ip = elastic.publicIp
           connection.associate_address(:public_ip => public_ip, :instance_id => instance.id)
         end
 
-        instance.wait_for { |instance| instance.info.ipAddress == public_ip }
+        instance.wait_for("elastic IP change to take") { |instance| instance.info.ipAddress == public_ip }
+        instance.create_dns_alias
       end
 
       private
@@ -43,7 +45,7 @@ module Aether
       end
 
       def leader_aliases
-        connection.dns.aliases(instance.type)
+        connection.dns.zone.aliases(instance.type)
       end
 
       # We could try to resolve by DNS, but external/internal consistencies

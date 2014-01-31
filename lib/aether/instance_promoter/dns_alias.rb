@@ -37,7 +37,7 @@ module Aether
       private
 
       def leader_aliases
-        dns.aliases(instance.type)
+        dns.zone.aliases(instance.type)
       end
 
       def dns
