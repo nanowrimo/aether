@@ -61,6 +61,11 @@ module Aether
           @options[:ssh_keys].push(path)
         end
 
+        @options[:namespace] = nil
+        parser.on(nil, "--namespace NAMESPACE", "Ruby modules to search for user library resources.") do |namespace|
+          @options[:namespace] = namespace
+        end
+
         @options[:verbose] ||= 0
         parser.on("-v", "--verbose", "Describe what's going on.") do
           @options[:verbose] += 1
@@ -96,6 +101,8 @@ module Aether
       @options[:secret_key] = File.new(File.expand_path(@options[:secret_key])).gets.chomp
 
       @options[:ssh_keys].map! { |path| File.expand_path(path) }
+
+      Aether.user_namespace = @options[:namespace]
     end
 
     # Runs the command using the given method and the given arguments.

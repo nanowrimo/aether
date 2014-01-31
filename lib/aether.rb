@@ -30,8 +30,9 @@ module Aether
   autoload :Shell, 'aether/shell'
 
   class << self
-    attr_accessor :user_load_path
+    attr_accessor :user_load_path, :user_namespace
   end
 
   self.user_load_path = File.expand_path("~/.aether/lib")
+  self.user_namespace = nil
 end

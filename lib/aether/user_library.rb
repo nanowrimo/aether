@@ -5,7 +5,7 @@ module Aether
     end
 
     def constantize(sym)
-      self.const_get(sym)
+      user_namespace.const_get(sym)
     end
 
     def load_path(*names)
@@ -16,7 +16,14 @@ module Aether
       File.new(load_path(*names))
     end
 
+    def user_namespace
+      Object.const_get(Aether.user_namespace)
+    rescue NameError
+      Object.const_set(Aether.user_namespace, Module.new)
+    end
+
     def require_user(*names)
+      user_namespace
       require load_path(*names)
       constantize(classify(names.last))
     end
