@@ -35,25 +35,9 @@ module Aether
       end
 
       after(:launch) do
-        if @options[:configure_by] == :puppet
-          wait_for { running? && ssh? }
-
-          # Prepend PATH environment variable with the Ruby gems binary path
-          exec!("echo 'PATH=\"/var/lib/gems/1.8/bin:'\"$PATH\"'\"' >> /etc/environment")
-
-          # Make sure that /mnt is mounted
-          # TODO Clean this mess up
-          device = volume_device('b')
-          exec!(<<-end_exec)
-            if [ -b '#{device}' ]; then
-              cut -d ' ' -f 1 /proc/mounts | grep -q '#{device}' || mount '#{device}' /mnt
-            fi
-          end_exec
-        end
-
         # Create canonical DNS record
         if manage_dns?
-          wait_for { |instance| instance.running? }
+          wait_for("running state") { running? }
 
           begin
             create_dns_alias(name) unless @dns_alias
