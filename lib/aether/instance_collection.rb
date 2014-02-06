@@ -86,5 +86,28 @@ module Aether
     def where(&blk)
       select { |instance| instance.instance_exec(&blk) }.extend(InstanceCollection)
     end
+
+    # A current usage summary by the given `group_by` block.
+    #
+    def usage_by(&blk)
+      group_by(&blk).sort_by { |key| key }.each.with_object({}) do |(key,group),report|
+        report[key] = group.group_by { |i| i.info.instanceType }.each.with_object({}) do |(key,group),report|
+          report[key] = group.length
+        end
+      end
+    end
+
+    # A current usage summary by availability zone which may be useful in
+    # optimizing things like instance reservations.
+    #
+    def usage_by_availability_zone
+      usage_by { |instance| instance.info.placement.availabilityZone }
+    end
+
+    # A current usage summary by type (role).
+    #
+    def usage_by_type
+      usage_by { |instance| instance.type }
+    end
   end
 end
