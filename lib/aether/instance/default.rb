@@ -47,6 +47,14 @@ module Aether
         end
       end
 
+      after(:terminate) do
+        if manage_dns? && dns_alias
+          notify "deleting DNS alias", dns_alias
+
+          dns_alias.delete
+        end
+      end
+
       attr_reader :options, :info
 
       def initialize(options = {})
@@ -331,12 +339,6 @@ module Aether
 
         around_callback(:terminate) do
           @connection.terminate_instances(options.merge(:instance_id => id))
-        end
-
-        if manage_dns? && dns_alias
-          notify "deleting DNS alias", dns_alias
-
-          dns_alias.delete
         end
       end
 
