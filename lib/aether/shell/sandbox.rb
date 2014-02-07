@@ -3,6 +3,13 @@ require 'shellwords'
 module Aether
   class Shell
     class Sandbox
+      SYSTEM_OPEN_COMMANDS = [ :'xdg-open', :open ]
+
+      # Resolves the appropriate system command for opening URLs.
+      #
+      def self.system_open_command
+        @system_open_command ||= self::SYSTEM_OPEN_COMMANDS.find { |cmd| `which #{cmd}`; $?.success? }
+      end
 
       def initialize(connection)
         @connection = connection
@@ -43,15 +50,18 @@ module Aether
         Instance.new(*arguments)
       end
 
-      # Opens the given resource or resources. Currently only supported in OS
-      # X (using the `open` command).
+      # Opens the given resource or resources.
       #
       def open(*resources)
         resources.tap { open_url(*resources.flatten.collect(&:url)) }
       end
 
+      # Opens the given URLs using a system-appropriate method. Currently,
+      # only OS X and Linux are supported using `open` or `xdg-open`
+      # respectively.
+      #
       def open_url(*urls)
-        `open #{urls.map(&:to_s).map(&:shellescape).join(' ')}`
+        urls.each { |url| `#{self.class.system_open_command} #{url.to_s.shellescape}` }
       end
 
       def snapshots
