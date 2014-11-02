@@ -42,7 +42,7 @@ if [[ ! $ROLE ]]; then
   ROLE=${HOST%-*}
 fi
 
-ssh_remote="ssh ${KEY:+-i $KEY} $USER"
+ssh_remote="ssh ${KEY:+-i $KEY} -oStrictHostKeyChecking=no $USER"
 ssh="$ssh_remote@$HOST.$DOMAIN"
 
 # execute remote tasks (tasks that connect to other hosts to grant permission,
