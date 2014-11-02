@@ -2,14 +2,14 @@
 
 # add permission in NFS exports on cache server
 echo "Checking for NFS permission"
-$ssh_remote@cache1 "grep -q '^/var/lib/drupal $HOST(' /etc/exports"
+$ssh_remote@cache1.$DOMAIN "grep -q '^/var/lib/drupal $HOST(' /etc/exports"
 
 if [[ $? -gt 0 ]]; then
   echo "Giving permission to $HOST"
-  cat <<-export | $ssh_remote@cache1 'cat >> /etc/exports'
+  cat <<-export | $ssh_remote@cache1.$DOMAIN 'cat >> /etc/exports'
 /var/lib/drupal $HOST(fsid=0,sync,no_wdelay,rw,insecure,no_subtree_check)
 export
-  $ssh_remote@cache1 '/etc/init.d/nfs-kernel-server reload'
+  $ssh_remote@cache1.$DOMAIN '/etc/init.d/nfs-kernel-server reload'
 else
   echo "Host $HOST already has permission"
 fi

@@ -39,11 +39,11 @@ HOST=$1
 # derive role from hostname, if no specific role was given
 #  e.g. "web1.aether.lettersandlight.org" would be derived as role "web"
 if [[ ! $ROLE ]]; then
-  ROLE=${HOST%%[0-9]*}
+  ROLE=${HOST%-*}
 fi
 
 ssh_remote="ssh ${KEY:+-i $KEY} $USER"
-ssh="$ssh_remote@$HOST"
+ssh="$ssh_remote@$HOST.$DOMAIN"
 
 # execute remote tasks (tasks that connect to other hosts to grant permission,
 # etc).

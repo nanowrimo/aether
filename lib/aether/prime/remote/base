@@ -2,11 +2,11 @@
 
 # start monitoring
 echo "Checking for munin configuration"
-$ssh_remote@logger "grep -q 'address $HOST\$' /etc/munin/munin.conf"
+$ssh_remote@logger.$DOMAIN "grep -q 'address $HOST\$' /etc/munin/munin.conf"
 
 if [[ $? -gt 0 ]]; then
   echo "Adding munin configuration"
-  cat <<-export | $ssh_remote@logger 'cat >> /etc/munin/munin.conf'
+  cat <<-export | $ssh_remote@logger.$DOMAIN 'cat >> /etc/munin/munin.conf'
 [aether-$ROLE;$HOST.$DOMAIN]
   address $HOST
 export
