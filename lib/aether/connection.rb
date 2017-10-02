@@ -72,8 +72,11 @@ module Aether
 
       @ec2.describe_instances(*args).reservationSet.item.inject({}) do |i,set|
         instance = set.instancesSet.item[0]
-        instance["group"] = set.groupSet.item[0].groupId
-
+	begin
+	        instance["group"] = set.groupSet.item[0].groupId
+        rescue
+		instance["group"] = 0
+	end
         positions[instance["group"]] ||= 0
         instance["position"] = positions[instance["group"]]
         positions[instance["group"]] += 1
